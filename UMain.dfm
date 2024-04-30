@@ -446,96 +446,31 @@ object FormMain: TFormMain
     BevelOuter = bvNone
     ParentBackground = False
     TabOrder = 3
-    object Label5: TLabel
-      Left = 9
-      Top = 19
-      Width = 58
-      Height = 13
-      Caption = 'Block Height'
-    end
-    object Label6: TLabel
-      Left = 9
-      Top = 62
-      Width = 55
-      Height = 13
-      Caption = 'Block Width'
-    end
-    object Label3: TLabel
-      Left = 9
-      Top = 108
-      Width = 25
-      Height = 13
-      Caption = 'Scale'
-    end
-    object EditHeight: TEdit
+    object SpeedButton1: TSpeedButton
       Left = 6
-      Top = 33
-      Width = 91
-      Height = 21
-      BevelInner = bvNone
-      BevelOuter = bvNone
+      Top = 1
+      Width = 49
+      Height = 22
+      Caption = 'Blocks'
+    end
+    object SpeedButton2: TSpeedButton
+      Left = 61
+      Top = 1
+      Width = 49
+      Height = 22
+      Caption = 'Lines'
+      Enabled = False
+    end
+    inline FrameEditBlocks: TFrameEditBlocks
+      Left = 0
+      Top = 24
+      Width = 122
+      Height = 442
+      Align = alCustom
       TabOrder = 0
-      Text = '100'
-    end
-    object UpDownHeight: TUpDown
-      Left = 97
-      Top = 33
-      Width = 16
-      Height = 21
-      Associate = EditHeight
-      Min = 20
-      Max = 200
-      Position = 100
-      TabOrder = 1
-      OnChanging = UpDownChanging
-    end
-    object EditWidth: TEdit
-      Left = 6
-      Top = 76
-      Width = 91
-      Height = 21
-      Align = alCustom
-      BevelInner = bvNone
-      BevelOuter = bvNone
-      TabOrder = 2
-      Text = '100'
-    end
-    object UpDownWidth: TUpDown
-      Left = 97
-      Top = 76
-      Width = 16
-      Height = 21
-      Associate = EditWidth
-      Min = 20
-      Max = 200
-      Position = 100
-      TabOrder = 3
-      OnChanging = UpDownChanging
-    end
-    object Edit4: TEdit
-      Left = 6
-      Top = 122
-      Width = 107
-      Height = 21
-      Align = alCustom
-      BevelInner = bvNone
-      BevelOuter = bvNone
-      TabOrder = 4
-      Text = '50'
-    end
-    object TrackBar1: TTrackBar
-      Left = 6
-      Top = 149
-      Width = 107
-      Height = 20
-      Ctl3D = True
-      DoubleBuffered = False
-      Max = 200
-      Min = 50
-      ParentCtl3D = False
-      ParentDoubleBuffered = False
-      Position = 100
-      TabOrder = 5
+      ExplicitTop = 24
+      ExplicitWidth = 122
+      ExplicitHeight = 442
     end
   end
   object ShapePanel: TPanel
@@ -547,6 +482,7 @@ object FormMain: TFormMain
     BevelOuter = bvNone
     ParentBackground = False
     TabOrder = 4
+    OnStartDrag = ShapePanelStartDrag
     object Label2: TLabel
       Left = 0
       Top = 0

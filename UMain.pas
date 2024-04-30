@@ -7,7 +7,7 @@ uses
   System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Menus,
   Vcl.ComCtrls, Vcl.ToolWin, Vcl.Imaging.pngimage, Vcl.CheckLst, Vcl.Buttons,
-  HelpTypes;
+  HelpTypes, UEditBlocks;
 
 type
 
@@ -28,19 +28,13 @@ type
     ChangeFontStyle: TComboBox;
     SaveDialog1: TSaveDialog;
     InstrumentPanel: TPanel;
-    Label5: TLabel;
-    EditHeight: TEdit;
-    UpDownHeight: TUpDown;
-    Label6: TLabel;
-    EditWidth: TEdit;
-    UpDownWidth: TUpDown;
-    Edit4: TEdit;
-    Label3: TLabel;
-    TrackBar1: TTrackBar;
     Label2: TLabel;
     ShapePanel: TPanel;
     HighLightBlock: TShape;
     PaintField: TPaintBox;
+    FrameEditBlocks: TFrameEditBlocks;
+    SpeedButton1: TSpeedButton;
+    SpeedButton2: TSpeedButton;
 
     procedure Button1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -51,15 +45,12 @@ type
     procedure BlockMouseMove(Sender: TObject; Shift: TShiftState;
       X, Y: Integer);
     procedure FormCreate(Sender: TObject);
-    //procedure BlockDblClick(Sender: TObject);
-    procedure UpDownChanging(Sender: TObject; var AllowChange: Boolean);
-    //procedure FieldClick(Sender: TObject);
     procedure StartBlockDragOver(Sender, Source: TObject; X, Y: Integer;
       State: TDragState; var Accept: Boolean);
     procedure StartBlockDragDrop(Sender, Source: TObject; X, Y: Integer);
     procedure PaintFieldPaint(Sender: TObject);
+    procedure ShapePanelStartDrag(Sender: TObject; var DragObject: TDragObject);
 
-    //procedure BlockClick(Sender: TObject);
   private
 
     flag: Boolean;
@@ -67,8 +58,6 @@ type
     { Public declarations }
   end;
 
-procedure ReSizeTree(bl: pBlock; w, h: Integer);
-procedure ReSizeAll(w, h: Integer);
 procedure MoveAllBlocks(bl: pBlock; X, Y: Integer);
 function FindMinDist(X, Y: Integer; main: pointer): pBlock;
 procedure FindMinDistInTree(bl: pBlock; X, Y: Integer; var Min: Real;
@@ -173,7 +162,7 @@ begin
   case blMain.Shape of
   stRectangle, stCycle:
   begin
-    if ((blmain.w div 2)/tg > blmain.h div 2) or ((blmain.y+blmain.h div 2)<=(bl.y+bl.h div 2)) then
+    if ((blmain.w div 2)/tg < blmain.h div 2) or ((blmain.y+blmain.h div 2)>=(bl.y+bl.h div 2)) then
     begin
       movx:=blmain.w+100;
       movy:=0;
@@ -204,38 +193,6 @@ begin
   end;
 
   moveAllBlocks(bl,movx-(bl.x-blmain.x)+x0, movy-(bl.y-blmain.y)+y0)
-end;
-
-procedure ReSizeAll(w, h: Integer);
-var
-  temp: pAllBlocks;
-begin
-  temp := Blocks;
-  while temp.Next <> Nil do
-  begin
-    temp := temp.Next;
-    ReSizeTree(temp.Block, w, h);
-  end;
-
-end;
-
-procedure ReSizeTree(bl: pBlock; w, h: Integer);
-var
-  temp: pBlock;
-begin
-  if bl <> nil then
-  begin
-    bl.h := h;
-
-    bl.w := w;
-
-    temp := bl;
-    for var i := 0 to High(temp.Next) do
-    begin
-      temp := bl.Next[i];
-      ReSizeTree(temp, w, h);
-    end;
-  end;
 end;
 
 procedure TFormMain.Button1Click(Sender: TObject);
@@ -306,8 +263,8 @@ begin
   EditText.Parent := Field;
   EditText.Hide;
 
-  UpDownHeight.Position := 75;
-  UpDownWidth.Position := 75;
+  FrameEditBlocks.UpDownHeight.Position := 75;
+  FrameEditBlocks.UpDownWidth.Position := 75;
 
   HighLightBlock.Hide;
   CurHighLightedBlock := nil;
@@ -368,7 +325,7 @@ begin
 
       if (tempDist < Min) and (tempDist < 150) then
       begin
-        if ((main<>nil) and (bl.x-10>=main.x)) or (main = nil) then
+        if ((main<>nil) and (bl.x-10<=main.x)) or (main = nil) then
         begin
           Min := tempDist;
           res := bl;
@@ -383,6 +340,13 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TFormMain.ShapePanelStartDrag(Sender: TObject;
+  var DragObject: TDragObject);
+begin
+  CurHighLightedBlock:=nil;
+  HighLightBlock.Hide;
 end;
 
 procedure TFormMain.StartBlockDragDrop(Sender, Source: TObject; X, Y: Integer);
@@ -440,8 +404,8 @@ begin
     temp.y := Y;
     with temp^ do
     begin
-      W := UpDownWidth.Position;
-      H := UpDownHeight.Position;
+      W := FrameEditBlocks.UpDownWidth.Position;
+      H := FrameEditBlocks.UpDownHeight.Position;
       ownCanvas:= (Sender as TPaintBox).Canvas;
       Pen:=ownCanvas.Pen;
       Brush:=ownCanvas.Brush;
@@ -486,17 +450,13 @@ begin
       HighLightBlock.Left := CurHighLightedBlock.x;
     end
     else
+    begin
+      CurHighLightedBlock := nil;
       HighLightBlock.Hide;
+    end;
+
   end;
 
-end;
-
-procedure TFormMain.UpDownChanging(Sender: TObject; var AllowChange: Boolean);
-var
-  temp: pAllBlocks;
-begin
-  temp := Blocks;
-  ReSizeAll(UpDownWidth.Position, UpDownHeight.Position);
 end;
 
 

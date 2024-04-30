@@ -4,7 +4,9 @@ uses
   Vcl.Forms,
   UMain in 'UMain.pas' {FormMain},
   UStart in 'UStart.pas' {FormStart},
-  HelpTypes in 'HelpTypes.pas';
+  HelpTypes in 'HelpTypes.pas',
+  UEditBlocks in 'UEditBlocks.pas' {FrameEditBlocks: TFrame},
+  Unit2 in 'Unit2.pas' {Frame2: TFrame};
 
 {$R *.res}
 

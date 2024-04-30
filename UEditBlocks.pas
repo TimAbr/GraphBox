@@ -4,7 +4,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
-  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.StdCtrls, HelpTypes, UMain;
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.StdCtrls, HelpTypes;
 
 type
   TFrameEditBlocks = class(TFrame)
@@ -18,7 +18,7 @@ type
     EditScale: TEdit;
     TrackBarScale: TTrackBar;
     procedure UpDownChanging(Sender: TObject; var AllowChange: Boolean);
-    procedure ReSizeTree(bl: pCombinedBlock; w, h: Integer);
+
 
   private
     { Private declarations }
@@ -26,8 +26,11 @@ type
     { Public declarations }
   end;
   procedure ReSizeAll(w, h: Integer);
+  procedure ReSizeTree(bl: pBlock; w, h: Integer);
 
 implementation
+
+Uses UMain;
 
 {$R *.dfm}
 
@@ -37,13 +40,16 @@ var
 begin
   temp := Blocks;
   ReSizeAll(UpDownWidth.Position, UpDownHeight.Position);
+  FormMain.PaintField.Invalidate();
 end;
+
 
 procedure ReSizeAll(w, h: Integer);
 var
   temp: pAllBlocks;
 begin
   temp := Blocks;
+
   while temp.Next <> Nil do
   begin
     temp := temp.Next;
@@ -52,17 +58,15 @@ begin
 
 end;
 
-procedure ReSizeTree(bl: pCombinedBlock; w, h: Integer);
+procedure ReSizeTree(bl: pBlock; w, h: Integer);
 var
-  temp: pCombinedBlock;
+  temp: pBlock;
 begin
   if bl <> nil then
   begin
-    bl.Form.Height := h;
-    bl.Text.Height := h;
+    bl.h := h;
 
-    bl.Form.Width := w;
-    bl.Text.Width := w;
+    bl.w := w;
 
     temp := bl;
     for var i := 0 to High(temp.Next) do
@@ -72,5 +76,6 @@ begin
     end;
   end;
 end;
+
 
 end.
