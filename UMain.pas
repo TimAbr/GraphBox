@@ -108,6 +108,23 @@ begin
 end;
 
 
+procedure MoveAllBlocks(bl: pBlock; X, Y: Integer);
+var
+  temp: pBlock;
+begin
+  if bl <> nil then
+  begin
+    bl.y := bl.y - y0 + Y;
+    bl.x := bl.x - x0 + X;
+
+    temp := bl;
+    for var i := 0 to High(temp.Next) do
+    begin
+      temp := bl.Next[i];
+      MoveAllBlocks(temp, X, Y);
+    end;
+  end;
+end;
 
 procedure DrawTree(bl: pBlock);
 var
@@ -136,6 +153,9 @@ begin
     temp := temp.Next;
     DrawTree(temp.Block);
   end;
+  if CurBlock<>nil then
+    DrawTree(CurBlock);
+
 end;
 
 procedure TFormMain.PaintFieldPaint(Sender: TObject);
@@ -144,6 +164,79 @@ begin
 end;
 
 
+Procedure ConnectBlocks(blmain,bl:pBlock);
+var
+  movx, movy: Integer;
+  tg:real;
+begin
+  tg:=abs(((bl.x+bl.w div 2)-(blmain.x+blmain.w div 2))/((bl.y+bl.h div 2)-(blmain.y+blmain.h div 2)));
+  case blMain.Shape of
+  stRectangle, stCycle:
+  begin
+    if ((blmain.w div 2)/tg > blmain.h div 2) or ((blmain.y+blmain.h div 2)<=(bl.y+bl.h div 2)) then
+    begin
+      movx:=blmain.w+100;
+      movy:=0;
+    end
+    else
+    begin
+      movy:=blmain.h+100;
+      movx:=(blmain.w-bl.w) div 2;
+    end
+  end;
+  stDecision:
+  if ((blmain.y+blmain.h div 2)<=(bl.y+bl.h div 2)) then
+  begin
+    movx:=blmain.w+100;
+    movy:=0;
+  end
+  else if tg>0.71 then
+  begin
+    movx:=blmain.w+100;
+    movy:=blmain.h+100;
+  end
+  else
+  begin
+    movy:=blmain.h+100;
+    movx:=(blmain.w-bl.w) div 2;
+  end;
+
+  end;
+
+  moveAllBlocks(bl,movx-(bl.x-blmain.x)+x0, movy-(bl.y-blmain.y)+y0)
+end;
+
+procedure ReSizeAll(w, h: Integer);
+var
+  temp: pAllBlocks;
+begin
+  temp := Blocks;
+  while temp.Next <> Nil do
+  begin
+    temp := temp.Next;
+    ReSizeTree(temp.Block, w, h);
+  end;
+
+end;
+
+procedure ReSizeTree(bl: pBlock; w, h: Integer);
+var
+  temp: pBlock;
+begin
+  if bl <> nil then
+  begin
+    bl.h := h;
+
+    bl.w := w;
+
+    temp := bl;
+    for var i := 0 to High(temp.Next) do
+    begin
+      temp := bl.Next[i];
+      ReSizeTree(temp, w, h);
+    end;
+  end;
+end;
 
 procedure TFormMain.Button1Click(Sender: TObject);
 begin
@@ -158,7 +251,7 @@ begin
   begin
     case bl.Shape of
 
-      stRectangle:
+      stRectangle..stCycle:
       begin
         if (bl.x<=x) and (bl.y<=y) and (x<=bl.x+bl.w) and (y<=bl.y+bl.h) then
           res:=bl;
@@ -171,7 +264,7 @@ begin
       for var i := 0 to High(temp.Next) do
       begin
         temp := bl.Next[i];
-        DrawTree(temp);
+        FindBlockInTree(temp,x,y,res);
       end;
     end;
   end;
@@ -213,8 +306,8 @@ begin
   EditText.Parent := Field;
   EditText.Hide;
 
-  UpDownHeight.Position := 100;
-  UpDownWidth.Position := 100;
+  UpDownHeight.Position := 75;
+  UpDownWidth.Position := 75;
 
   HighLightBlock.Hide;
   CurHighLightedBlock := nil;
@@ -275,8 +368,11 @@ begin
 
       if (tempDist < Min) and (tempDist < 150) then
       begin
-        Min := tempDist;
-        res := bl;
+        if ((main<>nil) and (bl.x-10>=main.x)) or (main = nil) then
+        begin
+          Min := tempDist;
+          res := bl;
+        end;
       end;
 
       temp := bl;
@@ -292,42 +388,57 @@ end;
 procedure TFormMain.StartBlockDragDrop(Sender, Source: TObject; X, Y: Integer);
 Var
   AllDiagrams: pAllBlocks;
+  temp:pBlock;
 begin
-  AllDiagrams := Blocks;
+  if CurHighLightedBlock = nil then
+  begin
+    AllDiagrams := Blocks;
 
-  while AllDiagrams.Next <> nil do
+    while AllDiagrams.Next <> nil do
+      AllDiagrams := AllDiagrams.Next;
+
+    new(AllDiagrams.Next);
+
     AllDiagrams := AllDiagrams.Next;
+    AllDiagrams.Next := Nil;
 
-  new(AllDiagrams.Next);
+    New(AllDiagrams.Block);
 
-  AllDiagrams := AllDiagrams.Next;
-  AllDiagrams.Next := Nil;
+    temp:=AllDiagrams.Block;
+    temp.Prev:=nil;
 
+  end
+  else
+  begin
+    New(CurHighLightedBlock.Next[0]);
+    CurHighLightedBlock.Next[0].Prev:=CurHighLightedBlock;
+    temp:=CurHighLightedBlock.Next[0];
+  end;
 
   with AllDiagrams^ do
   begin
-    New(Block);
-    Block.Shape := (Source as TStartBlock).Shape;
 
-    case Block.Shape of
+    temp.Shape := (Source as TStartBlock).Shape;
+
+    case temp.Shape of
       stRectangle, stCycle:
         begin
-          SetLength(AllDiagrams.Block.Next, 2);
+          SetLength(Temp.Next, 2);
         end;
       stDecision:
         begin
-          SetLength(AllDiagrams.Block.Next, 3);
+          SetLength(Temp.Next, 3);
         end;
 
     end;
 
-    for var i := 0 to High(AllDiagrams.Block.Next) do
-      AllDiagrams.Block.Next[i] := nil;
+    for var i := 0 to High(Temp.Next) do
+      Temp.Next[i] := nil;
 
 
-    Block.x := X;
-    Block.y := Y;
-    with Block^ do
+    temp.x := X;
+    temp.y := Y;
+    with temp^ do
     begin
       W := UpDownWidth.Position;
       H := UpDownHeight.Position;
@@ -340,7 +451,7 @@ begin
 
   end;
 
-  AllDiagrams.Block.Text := 'Hello';
+  temp.Text := 'Hello';
 
   with (Source as TStartBlock) do
   begin
@@ -348,6 +459,11 @@ begin
     Top := 60 + (Ord(Shape)) * (Width + 20);
     flag := False;
     (Source as TStartBlock).Parent := ShapePanel;
+  end;
+
+  if temp.prev<>nil then
+  begin
+    ConnectBlocks(temp.prev, temp);
   end;
 
   PaintField.Invalidate();
@@ -373,38 +489,6 @@ begin
       HighLightBlock.Hide;
   end;
 
-end;
-
-procedure ReSizeAll(w, h: Integer);
-var
-  temp: pAllBlocks;
-begin
-  temp := Blocks;
-  while temp.Next <> Nil do
-  begin
-    temp := temp.Next;
-    ReSizeTree(temp.Block, w, h);
-  end;
-
-end;
-
-procedure ReSizeTree(bl: pBlock; w, h: Integer);
-var
-  temp: pBlock;
-begin
-  if bl <> nil then
-  begin
-    bl.h := h;
-
-    bl.w := w;
-
-    temp := bl;
-    for var i := 0 to High(temp.Next) do
-    begin
-      temp := bl.Next[i];
-      ReSizeTree(temp, w, h);
-    end;
-  end;
 end;
 
 procedure TFormMain.UpDownChanging(Sender: TObject; var AllowChange: Boolean);
@@ -460,28 +544,15 @@ begin
       flag := True;
       x0 := X;
       y0 := Y;
+      if CurBlock.Prev<>nil then
+      begin
+        CurBlock.Prev.Next[0]:=nil;
+        CurBlock.Prev:=nil;
+      end;
     end;
 
   end;
 
-end;
-
-procedure MoveAllBlocks(bl: pBlock; X, Y: Integer);
-var
-  temp: pBlock;
-begin
-  if bl <> nil then
-  begin
-    bl.y := bl.y - y0 + Y;
-    bl.x := bl.x - x0 + X;
-
-    temp := bl;
-    for var i := 0 to High(temp.Next) do
-    begin
-      temp := bl.Next[i];
-      MoveAllBlocks(temp, X, Y);
-    end;
-  end;
 end;
 
 procedure TFormMain.BlockMouseMove(Sender: TObject; Shift: TShiftState;
@@ -516,15 +587,52 @@ end;
 
 procedure TFormMain.BlockMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
+
+var
+  allDiagrams, nextDiag:pAllBlocks;
+
 begin
 
   if Flag then
   begin
     flag := False;
+    AllDiagrams:=Blocks;
     if CurHighLightedBlock <> nil then
     begin
       CurHighLightedBlock.Next[0] := CurBlock;
       CurBlock.prev := CurHighLightedBlock;
+
+
+      ConnectBlocks(CurBlock.prev, CurBlock);
+
+
+      while (AllDiagrams.Next<>nil) and (AllDiagrams.Next.Block<>CurBlock) do
+        AllDiagrams:=AllDiagrams.Next;
+
+      if AllDiagrams.Next<>nil then
+      begin
+        nextDiag:=AllDiagrams.Next.Next;
+        Dispose(AllDiagrams.Next);
+
+        AllDiagrams.Next := NextDiag;
+      end;
+
+    end
+    else
+    begin
+      while (AllDiagrams.Next<>nil) and (AllDiagrams.Next.Block<>CurBlock) do
+        AllDiagrams:=AllDiagrams.Next;
+
+      if AllDiagrams.Next=nil then
+      begin
+
+        new(AllDiagrams.Next);
+
+        AllDiagrams := AllDiagrams.Next;
+        AllDiagrams.Next := Nil;
+
+        AllDiagrams.Block:=CurBlock;
+      end;
     end;
     CurHighLightedBlock := CurBlock;
     HighLightBlock.Show;

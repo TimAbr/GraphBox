@@ -7,6 +7,7 @@ object FormMain: TFormMain
   Color = clBtnHighlight
   Constraints.MinHeight = 578
   Constraints.MinWidth = 874
+  DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
