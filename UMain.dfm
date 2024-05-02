@@ -17,8 +17,10 @@ object FormMain: TFormMain
   OldCreateOrder = False
   Position = poDesigned
   Visible = True
+  WindowState = wsMaximized
   OnClose = FormClose
   OnCreate = FormCreate
+  OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
   object Panel1: TPanel
@@ -415,20 +417,12 @@ object FormMain: TFormMain
     Color = clBtnHighlight
     ParentColor = False
     TabOrder = 2
-    object HighLightBlock: TShape
-      Left = 360
-      Top = 200
-      Width = 65
-      Height = 65
-      Brush.Style = bsClear
-      Pen.Color = clMenuHighlight
-      Pen.Width = 2
-    end
     object PaintField: TPaintBox
       Left = 0
       Top = 0
       Width = 613
       Height = 439
+      OnDblClick = PaintFieldDblClick
       OnDragDrop = StartBlockDragDrop
       OnDragOver = StartBlockDragOver
       OnMouseDown = BlockMouseDown
@@ -446,20 +440,24 @@ object FormMain: TFormMain
     BevelOuter = bvNone
     ParentBackground = False
     TabOrder = 3
-    object SpeedButton1: TSpeedButton
+    object ButtonBlocks: TSpeedButton
       Left = 6
       Top = 1
       Width = 49
       Height = 22
+      GroupIndex = 1
+      Down = True
       Caption = 'Blocks'
+      OnClick = ButtonBlocksClick
     end
-    object SpeedButton2: TSpeedButton
+    object ButtonLines: TSpeedButton
       Left = 61
       Top = 1
       Width = 49
       Height = 22
+      GroupIndex = 1
       Caption = 'Lines'
-      Enabled = False
+      OnClick = ButtonLinesClick
     end
     inline FrameEditBlocks: TFrameEditBlocks
       Left = 0
@@ -472,6 +470,15 @@ object FormMain: TFormMain
       ExplicitWidth = 122
       ExplicitHeight = 442
     end
+    inline FrameEditLines: TFrameEditLines
+      Left = 0
+      Top = 24
+      Width = 131
+      Height = 428
+      TabOrder = 1
+      Visible = False
+      ExplicitTop = 24
+    end
   end
   object ShapePanel: TPanel
     Left = 0
@@ -480,9 +487,9 @@ object FormMain: TFormMain
     Height = 442
     Align = alLeft
     BevelOuter = bvNone
+    DragMode = dmAutomatic
     ParentBackground = False
     TabOrder = 4
-    OnStartDrag = ShapePanelStartDrag
     object Label2: TLabel
       Left = 0
       Top = 0

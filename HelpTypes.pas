@@ -135,23 +135,23 @@ begin
     Brush := bl.Brush;
     case bl.Shape of
       stRectangle:
-        Rectangle(bl.X+1, bl.Y+1, bl.X + bl.W-1, bl.Y + bl.H-1);
+        Rectangle(bl.X, bl.Y, bl.X + bl.W, bl.Y + bl.H);
       stCircle:
-        Ellipse(bl.X, bl.Y, bl.X + bl.W-1, bl.Y + bl.H-1);
+        Ellipse(bl.X, bl.Y, bl.X + bl.W, bl.Y + bl.H);
       stDecision:
       begin
 
-        Polygon([Point(bl.x+bl.w-1, bl.y+bl.h div 2),
-                 Point(bl.x+bl.w div 2,bl.y+bl.h-1),
+        Polygon([Point(bl.x+bl.w, bl.y+bl.h div 2),
+                 Point(bl.x+bl.w div 2,bl.y+bl.h),
                  Point(bl.x,bl.y+bl.h div 2),
                  Point(bl.x+bl.w div 2,bl.y)]);
       end;
       stCycle:
       begin
         Polygon([Point(bl.x+(bl.w div 3)*2, bl.y),
-                 Point(bl.x+bl.w-1, bl.y+bl.h div 2),
-                 Point(bl.x+(bl.w div 3)*2, bl.y+bl.h-1),
-                 Point(bl.x+(bl.w div 3), bl.y+bl.h-1),
+                 Point(bl.x+bl.w, bl.y+bl.h div 2),
+                 Point(bl.x+(bl.w div 3)*2, bl.y+bl.h),
+                 Point(bl.x+(bl.w div 3), bl.y+bl.h),
                  Point(bl.x,bl.y+bl.h div 2),
                  Point(bl.x+bl.w div 3,bl.y)]);
       end;

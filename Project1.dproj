@@ -110,8 +110,9 @@
             <FormType>dfm</FormType>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
-        <DCCReference Include="Unit2.pas">
-            <Form>Frame2</Form>
+        <DCCReference Include="UEditLines.pas">
+            <Form>FrameEditLines</Form>
+            <FormType>dfm</FormType>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
         <BuildConfiguration Include="Release">
