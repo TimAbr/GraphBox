@@ -422,7 +422,7 @@ begin
 
       stRectangle..stCycle:
       begin
-        if (bl.x<=x) and (bl.y<=y) and (x<=bl.x+bl.w) and (y<=bl.y+bl.h) then
+        if (bl.x<=x) and (bl.y<=y) and (x<=bl.x+bl.w) and (y<=bl.y+bl.h)then
           res:=bl;
       end;
 
@@ -438,6 +438,55 @@ begin
     end;
   end;
 end;
+
+
+procedure IsBeforeInTree(bl, check, root: pBlock; var res, ex: Boolean);
+var
+  temp: pBlock;
+begin
+  if bl=root then
+    ex:=True;
+
+  if ex then
+    exit;
+
+  if (bl <> nil) and (res=False) then
+  begin
+    if bl=check then
+      res:=True;
+
+    if res=False then
+    begin
+      temp := bl;
+      for var i := high(temp.Next) downto Low(temp.Next) do
+      begin
+        temp := bl.Next[i];
+        IsBeforeInTree(temp,check,root,res,ex);
+        if Res=True then
+          exit;
+      end;
+    end;
+  end;
+end;
+
+function IsBefore(check,root: pBlock):  Boolean;
+var
+  tempTree: pAllBlocks;
+  bl: pBlock;
+  exitCond: Boolean;
+begin
+  tempTree := Blocks;
+  bl:=root;
+  while bl.Prev<>nil do
+    bl:=bl.Prev;
+
+  Result:=False;
+  ExitCond:=False;
+
+  IsBeforeInTree(bl, check, root, Result, ExitCond);
+end;
+
+
 
 
 function FindBlock(x,y:Integer):  pBlock;
@@ -477,10 +526,37 @@ begin
   end;
 end;
 
+procedure SetDefaultCoordsInTree(bl:pBlock; x, y: Integer);
+begin
+  if (bl<>nil) then
+  begin
+    if (bl.Prev<>nil) then
+    begin
+      bl.x:=x;
+      bl.y:=y;
+    end;
+    for var i := High(bl.Next) downto Low(bl.Next) do
+      SetDefaultCoordsInTree(bl.Next[i],x,y);
+  end;
+end;
+
+Procedure SetDefaultCoords(x,y:Integer);
+var
+  temp: pAllBlocks;
+begin
+  temp := Blocks;
+  while (temp.Next <> Nil) do
+  begin
+    temp := temp.Next;
+    SetDefaultCoordsInTree(temp.Block,x,y);
+  end;
+end;
+
+
 
 Procedure StructuriseBlocksInTree(bl:pBlock; Var dist: Integer; num, level: Integer);
 var
-  ContinueCompacting, temp1: Boolean;
+  ContinueCompacting, temp1, temp2: Boolean;
   tempBlock: pBlock;
 begin
   if (bl<>nil) then
@@ -515,8 +591,7 @@ begin
         while ContinueCompacting do
         begin
           tempBlock:=findBlock(bl.x+bl.w div 2, bl.y-FormMain.FrameEditLines.UpDownVertical.Position-5);
-          IsInNext(bl,tempBlock,temp1);
-          ContinueCompacting:=(tempBlock = nil) or temp1;
+          ContinueCompacting:=(tempBlock = nil);
 
           if length(bl.Next)=3 then
             temp1 := (bl.Next[1] = nil) and (bl.Next[2] = nil)
@@ -525,7 +600,8 @@ begin
           else
             temp1:=True;
 
-          ContinueCompacting:=ContinueCompacting and (temp1 or (findBlock(bl.x+bl.w+FormMain.FrameEditLines.UpDownHorizontal.Position + 5, bl.y-FormMain.FrameEditLines.UpDownVertical.Position-5) = nil));
+          tempBlock:=findBlock(bl.x+bl.w+FormMain.FrameEditLines.UpDownHorizontal.Position + 5, bl.y-FormMain.FrameEditLines.UpDownVertical.Position-5);
+          ContinueCompacting:=ContinueCompacting and (temp1 or (tempBlock = nil));
 
           ContinueCompacting:=ContinueCompacting and (bl.y>bl.Prev.y+bl.prev.h+FormMain.FrameEditLines.UpDownVertical.Position*2);
 
@@ -554,6 +630,8 @@ var
 begin
   temp := Blocks;
   dist:=0;
+
+  SetDefaultCoords(-1000,-1000);
   while (temp.Next <> Nil) do
   begin
     temp := temp.Next;
