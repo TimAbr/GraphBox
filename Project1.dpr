@@ -6,7 +6,8 @@ uses
   UStart in 'UStart.pas' {FormStart},
   HelpTypes in 'HelpTypes.pas',
   UEditBlocks in 'UEditBlocks.pas' {FrameEditBlocks: TFrame},
-  UEditLines in 'UEditLines.pas' {FrameEditLines: TFrame};
+  UEditLines in 'UEditLines.pas' {FrameEditLines: TFrame},
+  UFiles in 'UFiles.pas';
 
 {$R *.res}
 

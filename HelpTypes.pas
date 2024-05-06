@@ -30,15 +30,20 @@ interface
       Next: pAllBlocks;
     end;
 
+    THorAllign = (hLeft, hCenter, hRight);
+    TVertAllign = (vUp, vCenter, vDown);
+
     TBlock = record
       Pen:TPen;
       Brush:TBrush;
       Text:String;
       Shape:TShapeType;
-      x,y,w,h:Integer;
+      x,y,w,h, PrevX, PrevY:Integer;
       Next: Array of pBlock;
       Prev: pBlock;
       ownCanvas:TCanvas;
+      TextHorAllign:THorAllign;
+      TextVertAllign:TVertAllign;
     end;
 
     TProEdit = class(TRichEdit)

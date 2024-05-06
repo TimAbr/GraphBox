@@ -1,7 +1,7 @@
 object FormMain: TFormMain
   Left = 0
   Top = 0
-  Caption = 'Draw.io'
+  Caption = 'GraphBox'
   ClientHeight = 519
   ClientWidth = 858
   Color = clBtnHighlight
@@ -410,6 +410,10 @@ object FormMain: TFormMain
     Top = 49
     Width = 619
     Height = 442
+    HorzScrollBar.Smooth = True
+    HorzScrollBar.Tracking = True
+    VertScrollBar.Smooth = True
+    VertScrollBar.Tracking = True
     Align = alClient
     BevelInner = bvNone
     BevelOuter = bvNone
@@ -417,6 +421,8 @@ object FormMain: TFormMain
     Color = clBtnHighlight
     ParentColor = False
     TabOrder = 2
+    Touch.InteractiveGestures = [igPan, igTwoFingerTap]
+    OnMouseWheel = FieldMouseWheel
     object PaintField: TPaintBox
       Left = 0
       Top = 0

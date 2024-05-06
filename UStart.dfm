@@ -15,11 +15,11 @@ object FormStart: TFormStart
   PixelsPerInch = 96
   TextHeight = 52
   object Label1: TLabel
-    Left = 274
+    Left = 250
     Top = 104
-    Width = 146
+    Width = 185
     Height = 52
-    Caption = 'Draw.io'
+    Caption = 'GraphBox'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -43

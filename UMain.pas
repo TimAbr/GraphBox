@@ -7,7 +7,7 @@ uses
   System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Menus,
   Vcl.ComCtrls, Vcl.ToolWin, Vcl.Imaging.pngimage, Vcl.CheckLst, Vcl.Buttons,
-  HelpTypes, UEditBlocks, UEditLines;
+  HelpTypes, UEditBlocks, UEditLines, UFiles;
 
 type
 
@@ -55,6 +55,8 @@ type
     procedure ButtonLinesClick(Sender: TObject);
     procedure PaintFieldDblClick(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure FieldMouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
 
   private
 
@@ -73,11 +75,13 @@ var
   FormMain: TFormMain;
   Blocks: pAllBlocks;
   EditText: TProEdit;
-  CurHighLightedBlock, HighLightBlock: pBlock;
-  x0, y0: Integer;
+  CurHighLightedBlock, HighLightBlock, HintBlock: pBlock;
+  x0, y0, ConnectNum: Integer;
   curBlock: pBlock;
   flag: Boolean;
-  HighLightColor, DefaultColor:Integer;
+  HighLightColor, DefaultColor, HintBlockColor:Integer;
+  HintBlockStyle: TPenStyle;
+  Compact:Boolean;
 
 
 implementation
@@ -99,6 +103,7 @@ begin
   Blocks.Block := Nil;
 
   CurBlock:=nil;
+  Compact:=True;
 
   EditText := TProEdit.Create(FormMain);
   EditText.Parent := Field;
@@ -116,6 +121,19 @@ begin
   CurHighLightedBlock := nil;
   HighLightColor:=clHighLight;
   DefaultColor:=clBlack;
+
+  HintBlock:=nil;
+  New(HintBlock);
+  HintBlock.Prev:=nil;
+
+  HintBlock.ownCanvas:=FormMain.PaintField.Canvas;
+  HintBlock.Pen:=FormMain.PaintField.Canvas.Pen;
+  HintBlock.Brush:=FormMain.PaintField.Canvas.Brush;
+  HintBlock.w:=FormMain.FrameEditBlocks.UpDownWidth.Position;
+  HintBlock.h:=FormMain.FrameEditBlocks.UpDownHeight.Position;
+
+  HintBlockStyle:=psDash;
+  HintBlockColor:=clGrayText;
 
   for var i := 0 to 3 do
   begin
@@ -145,13 +163,32 @@ begin
   PaintField.Invalidate();
 end;
 
+procedure TFormMain.FieldMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+
+Var
+  ScrollBar: TControlScrollBar;
+  delta:Integer;
+begin
+  if ssShift in shift then
+    ScrollBar:=Field.HorzScrollBar
+  else
+    ScrollBar:=Field.VertScrollBar;
+  if WheelDelta>0 then
+    delta:=-ScrollBar.Increment
+  else
+    delta:=ScrollBar.Increment;
+  ScrollBar.Position:=ScrollBar.Position+delta;
+end;
+
+
 procedure TFormMain.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   FormStart.Show();
 end;
 
 
-procedure IsInNext(cur, source: pBlock;var Flag: Boolean);
+procedure IsInNext(cur, source: pBlock; var Flag: Boolean);
 var
   temp: pBlock;
 begin
@@ -188,7 +225,61 @@ begin
   end;
 end;
 
+procedure DrawLine(bl: pBlock; num: Integer);
+begin
+  case bl.Prev.Shape of
+  stRectangle:
+  begin
+    case num of
+    0:
+    begin
+      bl.ownCanvas.moveto(bl.Prev.x+bl.Prev.w div 2,bl.Prev.y+bl.Prev.h);
+      bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.y);
+    end;
+    1:
+    begin
+      bl.ownCanvas.moveto(bl.Prev.x+bl.Prev.w,bl.Prev.y+bl.Prev.h div 2);
+      bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.Prev.y+bl.Prev.h div 2);
+      bl.ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
+    end;
+    end;
 
+  end;
+  stDecision:
+  begin
+    case num of
+    0:
+    begin
+      bl.ownCanvas.moveto(bl.Prev.x+bl.Prev.w div 2,bl.Prev.y+bl.Prev.h);
+      bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.y);
+    end;
+    2:
+    begin
+      bl.ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*3) div 4,bl.Prev.y+(bl.Prev.h) div 4);
+      bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.Prev.y-FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.Prev.y-FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      bl.ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
+    end;
+    1:
+    begin
+      bl.ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*3) div 4,bl.Prev.y+(bl.Prev.h*3) div 4);
+      bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+10,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      bl.ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
+    end;
+    end;
+  end;
+  stCycle:
+  begin
+
+  end;
+  stCircle:
+  begin
+
+  end;
+
+  end;
+end;
 
 procedure DrawTree(bl: pBlock; var maxx, maxy: Integer);
 var
@@ -208,58 +299,7 @@ begin
       num:=0;
       while bl.Prev.Next[num]<>bl do
         inc(num);
-      case bl.Prev.Shape of
-      stRectangle:
-      begin
-        case num of
-        0:
-        begin
-          bl.ownCanvas.moveto(bl.Prev.x+bl.Prev.w div 2,bl.Prev.y+bl.Prev.h);
-          bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.y);
-        end;
-        1:
-        begin
-          bl.ownCanvas.moveto(bl.Prev.x+bl.Prev.w,bl.Prev.y+bl.Prev.h div 2);
-          bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.Prev.y+bl.Prev.h div 2);
-          bl.ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
-        end;
-        end;
-
-      end;
-      stDecision:
-      begin
-        case num of
-        0:
-        begin
-          bl.ownCanvas.moveto(bl.Prev.x+bl.Prev.w div 2,bl.Prev.y+bl.Prev.h);
-          bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.y);
-        end;
-        1:
-        begin
-          bl.ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*3) div 4,bl.Prev.y+(bl.Prev.h) div 4);
-          bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+10,bl.Prev.y-10);
-          bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.Prev.y-10);
-          bl.ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
-        end;
-        2:
-        begin
-          bl.ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*3) div 4,bl.Prev.y+(bl.Prev.h*3) div 4);
-          bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+10,bl.Prev.y+bl.Prev.h+10);
-          bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.Prev.y+bl.Prev.h+10);
-          bl.ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
-        end;
-        end;
-      end;
-      stCycle:
-      begin
-
-      end;
-      stCircle:
-      begin
-
-      end;
-
-      end;
+      DrawLine(bl, num);
     end;
 
     temp := bl;
@@ -269,6 +309,41 @@ begin
       DrawTree(temp,maxx, maxy);
     end;
   end;
+end;
+
+Procedure ShowHintBlock(num: Integer);
+
+begin
+  HintBlock.Pen.Style:=HintBlockStyle;
+  HintBlock.Pen.Color:=HintBlockColor;
+
+
+  case num of
+  0:
+  begin
+    HintBlock.y:=HintBlock.prev.y+HintBlock.prev.h+FormMain.FrameEditLines.UpDownVertical.Position;
+    HintBlock.x:=HintBlock.Prev.x + (HintBlock.Prev.w-HintBlock.w) div 2;
+  end;
+
+  1:
+  begin
+    HintBlock.x:=HintBlock.Prev.x + HintBlock.Prev.w + FormMain.FrameEditLines.UpDownHorizontal.Position;
+    HintBlock.y:=HintBlock.prev.y + HintBlock.prev.h + FormMain.FrameEditLines.UpDownVertical.Position;
+  end;
+
+  2:
+  begin
+    HintBlock.x:=HintBlock.Prev.x + HintBlock.Prev.w + FormMain.FrameEditLines.UpDownHorizontal.Position;
+    HintBlock.y:=HintBlock.Prev.y;
+  end;
+
+  end;
+
+  DrawLine(HintBlock,num);
+  DrawBlock(HintBlock);
+
+  HintBlock.Pen.Style:=psSolid;
+  HintBlock.Pen.Color:=HintBlockColor;
 end;
 
 procedure DrawAllBlocks();
@@ -307,7 +382,12 @@ begin
     HighLightBlock.Pen.Color:=DefaultColor;
   end;
 
+  if HintBlock.Prev<>nil then
+    ShowHintBlock(ConnectNum);
+
+
 end;
+
 
 
 procedure TFormMain.PaintFieldDblClick(Sender: TObject);
@@ -330,72 +410,6 @@ procedure TFormMain.PaintFieldPaint(Sender: TObject);
 begin
   DrawAllBlocks();
 end;
-
-
-
-Function ConnectBlocks(blmain,bl:pBlock; var movx, movy:Integer): Integer;
-
-begin
-
-  case blMain.Shape of
-  stRectangle, stCycle:
-  begin
-    if (bl.x-blmain.x>bl.y-blmain.y) or ((blmain.y+blmain.h div 2)>=(bl.y+bl.h div 2)) then
-    begin
-      movx:=blmain.w+FormMain.FrameEditLines.UpDownHorizontal.Position;
-      Result:=1;
-      movy:=blmain.h+FormMain.FrameEditLines.UpDownVertical.Position;
-
-    end
-    else
-    begin
-      movy:=blmain.h+FormMain.FrameEditLines.UpDownVertical.Position;
-      movx:=(blmain.w-bl.w) div 2;
-      Result:=0;
-    end
-  end;
-  stDecision:
-  if ((blmain.y+blmain.h div 2)>=(bl.y+bl.h div 2)) then
-  begin
-    movx:=blmain.w+FormMain.FrameEditLines.UpDownHorizontal.Position;
-    movy:=0;
-    Result:=1;
-  end
-  else if (bl.x-blmain.x>bl.y-blmain.y) then
-  begin
-    movx:=blmain.w+FormMain.FrameEditLines.UpDownHorizontal.Position;
-    movy:=blmain.h+FormMain.FrameEditLines.UpDownVertical.Position;
-    Result:=2;
-  end
-  else
-  begin
-    movy:=blmain.h+FormMain.FrameEditLines.UpDownVertical.Position;
-    movx:=(blmain.w-bl.w) div 2;
-    Result:=0;
-  end;
-
-  end;
-end;
-
-
-
-procedure TFormMain.Button1Click(Sender: TObject);
-begin
-  close;
-end;
-
-procedure TFormMain.ButtonBlocksClick(Sender: TObject);
-begin
-  FrameEditBlocks.Show;
-  FrameEditLines.Hide;
-end;
-
-procedure TFormMain.ButtonLinesClick(Sender: TObject);
-begin
-  FrameEditBlocks.Hide;
-  FrameEditLines.Show;
-end;
-
 
 
 procedure FindBlockInTree(bl: pBlock; x, y: Integer; var res: pBlock);
@@ -425,6 +439,7 @@ begin
   end;
 end;
 
+
 function FindBlock(x,y:Integer):  pBlock;
 var
   temp: pAllBlocks;
@@ -436,6 +451,131 @@ begin
     temp := temp.Next;
     FindBlockInTree(temp.Block, x, y, Result);
   end;
+end;
+
+
+
+Function ConnectBlocks(blmain,bl:pBlock): Integer;
+
+begin
+
+  case blMain.Shape of
+  stRectangle, stCycle:
+    if (bl.x-blmain.x>=bl.y-blmain.y) or ((blmain.y+blmain.h div 2)>=(bl.y+bl.h div 2)) then
+      Result:=1
+    else
+      Result:=0;
+
+  stDecision:
+    if ((blmain.y+blmain.h div 2)>=(bl.y+bl.h div 2)) then
+      Result:=2
+    else if (bl.x-blmain.x>=bl.y-blmain.y) then
+      Result:=1
+    else
+      Result:=0;
+
+  end;
+end;
+
+
+Procedure StructuriseBlocksInTree(bl:pBlock; Var dist: Integer; num, level: Integer);
+var
+  ContinueCompacting, temp1: Boolean;
+  tempBlock: pBlock;
+begin
+  if (bl<>nil) then
+  begin
+    if bl.Prev<>nil then
+    begin
+      case num of
+      0:
+      begin
+        bl.y:=dist+FormMain.FrameEditLines.UpDownVertical.Position;
+        bl.x:=bl.Prev.x + (bl.Prev.w-bl.w) div 2;
+
+      end;
+
+      1:
+      begin
+        bl.x:=bl.Prev.x + bl.Prev.w + FormMain.FrameEditLines.UpDownHorizontal.Position;
+        bl.y:=dist + FormMain.FrameEditLines.UpDownVertical.Position;
+      end;
+
+      2:
+      begin
+        bl.x:=bl.Prev.x + bl.Prev.w + FormMain.FrameEditLines.UpDownHorizontal.Position;
+        bl.y:=bl.Prev.y;
+      end;
+
+      end;
+
+      if ((Num = 0) or (num = 1)) and Compact and (level <> 1) then
+      begin
+        continueCompacting:=True;
+        while ContinueCompacting do
+        begin
+          tempBlock:=findBlock(bl.x+bl.w div 2, bl.y-FormMain.FrameEditLines.UpDownVertical.Position-5);
+          IsInNext(bl,tempBlock,temp1);
+          ContinueCompacting:=(tempBlock = nil) or temp1;
+
+          if length(bl.Next)=3 then
+            temp1 := (bl.Next[1] = nil) and (bl.Next[2] = nil)
+          else if length(bl.Next)=2 then
+            temp1 := (bl.Next[1] = nil)
+          else
+            temp1:=True;
+
+          ContinueCompacting:=ContinueCompacting and (temp1 or (findBlock(bl.x+bl.w+FormMain.FrameEditLines.UpDownHorizontal.Position + 5, bl.y-FormMain.FrameEditLines.UpDownVertical.Position-5) = nil));
+
+          ContinueCompacting:=ContinueCompacting and (bl.y>bl.Prev.y+bl.prev.h+FormMain.FrameEditLines.UpDownVertical.Position*2);
+
+          if ContinueCompacting then
+            bl.y:=bl.y-(bl.h+FormMain.FrameEditLines.UpDownVertical.Position);
+        end;
+      end;
+
+    end;
+
+    if dist<=bl.y+bl.h then
+      dist:=bl.y+bl.h;
+
+    for var i := High(bl.Next) downto Low(bl.Next) do
+    if i=0 then
+      StructuriseBlocksInTree(bl.Next[i],dist, i,level)
+    else
+      StructuriseBlocksInTree(bl.Next[i],dist, i,level+1);
+  end;
+end;
+
+Procedure StructuriseBlocks();
+var
+  temp: pAllBlocks;
+  dist: Integer;
+begin
+  temp := Blocks;
+  dist:=0;
+  while (temp.Next <> Nil) do
+  begin
+    temp := temp.Next;
+    StructuriseBlocksInTree(temp.Block, dist, 0, 1);
+  end;
+end;
+
+procedure TFormMain.Button1Click(Sender: TObject);
+begin
+  close;
+end;
+
+procedure TFormMain.ButtonBlocksClick(Sender: TObject);
+begin
+  FrameEditBlocks.Show;
+  FrameEditLines.Hide;
+end;
+
+procedure TFormMain.ButtonLinesClick(Sender: TObject);
+begin
+  FrameEditBlocks.Hide;
+  FrameEditLines.Show;
 end;
 
 
@@ -472,7 +612,7 @@ begin
       begin
       tempDist := sqrt(sqr(X - bl.x) + sqr(Y - bl.y));
 
-      if (tempDist < Min) and (x < FormMain.FrameEditLines.UpDownHorizontal.Position+bl.x+bl.w+10) and (y < FormMain.FrameEditLines.UpDownVertical.Position+bl.y+bl.h+10) then
+      if (tempDist < Min) and (x < FormMain.FrameEditLines.UpDownHorizontal.Position+bl.x+bl.w+210) and (y < FormMain.FrameEditLines.UpDownVertical.Position+bl.y+bl.h+210) then
       begin
         if (bl.x-10<=x) then
         begin
@@ -518,7 +658,7 @@ Var
 begin
   Dispose(CurBlock);
   CurBlock:=nil;
-
+  HintBlock.Prev:=0;
   if CurHighLightedBlock = nil then
   begin
     AllDiagrams := Blocks;
@@ -550,13 +690,13 @@ begin
     temp.w:=FrameEditBlocks.UpDownWidth.Position;
     temp.h:=FrameEditBlocks.UpDownHeight.Position;
 
-    num:=ConnectBlocks(CurHighLightedBlock, temp, movx, movy);
+    num:=ConnectBlocks(CurHighLightedBlock, temp);
 
     if CurHighLightedBlock.Next[num]=nil then
     begin
       CurHighLightedBlock.Next[num]:=temp;
       CurHighLightedBlock.Next[num].Prev:=CurHighLightedBlock;
-      moveAllBlocks(temp,movx-(temp.x-temp.prev.x)+x0, movy-(temp.y-temp.prev.y)+y0);
+      //moveAllBlocks(temp,movx-(temp.x-temp.prev.x)+x0, movy-(temp.y-temp.prev.y)+y0);
     end
     else
     begin
@@ -618,6 +758,15 @@ begin
   end;
 
   PaintField.EndDrag(True);
+  StructuriseBlocks();
+
+  CurHighLightedBlock := temp;
+  HighLightBlock.Shape:=CurHighLightedBlock.Shape;
+  HighLightBlock.H := CurHighLightedBlock.H+2;
+  HighLightBlock.W := CurHighLightedBlock.W+2;
+  HighLightBlock.y := CurHighLightedBlock.y-1;
+  HighLightBlock.x := CurHighLightedBlock.x-1;
+
   PaintField.Invalidate();
 end;
 
@@ -632,12 +781,12 @@ begin
     Accept := True;
     CurBlock.x:=x;
     CurBlock.y:=y;
-
+    HintBlock.prev:=nil;
     if FindMinDist(X, Y, nil) <> nil then
     begin
       CurHighLightedBlock := FindMinDist(X, Y, nil);
 
-      num:=ConnectBlocks(CurHighLightedBlock, CurBlock, movx, movy);
+      num:=ConnectBlocks(CurHighLightedBlock, CurBlock);
 
       if CurHighLightedBlock.Next[num]=nil then
       begin
@@ -646,7 +795,9 @@ begin
         HighLightBlock.W := CurHighLightedBlock.W+2;
         HighLightBlock.y := CurHighLightedBlock.y-1;
         HighLightBlock.x := CurHighLightedBlock.x-1;
-
+        HintBlock.Prev:=CurHighLightedBlock;
+        HintBlock.Shape:=CurBlock.Shape;
+        ConnectNum:=num;
       end
       else
       begin
@@ -658,7 +809,9 @@ begin
     begin
       CurHighLightedBlock := nil;
     end;
+
     PaintField.Invalidate();
+
   end;
 
 end;
@@ -689,11 +842,23 @@ begin
     flag := True;
     x0 := X;
     y0 := Y;
+
+    CurBlock.PrevX:=X;
+    CurBlock.PrevY:=Y;
     if CurBlock.Prev<>nil then
     begin
       num:=0;
       while CurBlock.Prev.Next[num]<>CurBlock do
         inc(num);
+
+      CurHighLightedBlock:=CurBlock.prev;
+      HighLightBlock.Shape:=CurHighLightedBlock.Shape;
+      HighLightBlock.H := CurHighLightedBlock.H+2;
+      HighLightBlock.W := CurHighLightedBlock.W+2;
+      HighLightBlock.y := CurHighLightedBlock.y-1;
+      HighLightBlock.x := CurHighLightedBlock.x-1;
+
+      //PaintField.Invalidate();
 
       CurBlock.Prev.Next[num]:=nil;
       CurBlock.Prev:=nil;
@@ -705,20 +870,26 @@ end;
 procedure TFormMain.BlockMouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
 var
-  num, movx, movy: Integer;
+  num: Integer;
 
 begin
 
   if flag then
   begin
     MoveAllBlocks(CurBlock, X, Y);
+
     y0:=y;
     x0:=x;
+
+    CurBlock.PrevX:=MaxInt;
+    CurBlock.PrevY:=MaxInt;
+
     CurHighLightedBlock := FindMinDist(CurBlock.x, CurBlock.y, CurBlock);
+    HintBlock.Prev:=nil;
 
     if CurHighLightedBlock<>nil then
     begin
-      num:=ConnectBlocks(CurHighLightedBlock, CurBlock, movx, movy);
+      num:=ConnectBlocks(CurHighLightedBlock, CurBlock);
 
       if CurHighLightedBlock.Next[num]=nil then
       begin
@@ -727,6 +898,9 @@ begin
         HighLightBlock.W := CurHighLightedBlock.W+2;
         HighLightBlock.y := CurHighLightedBlock.y-1;
         HighLightBlock.x := CurHighLightedBlock.x-1;
+        HintBlock.Prev := CurHighLightedBlock;
+        HintBlock.Shape:=CurBlock.Shape;
+        ConnectNum:=num;
       end
       else
       begin
@@ -748,7 +922,7 @@ procedure TFormMain.BlockMouseUp(Sender: TObject; Button: TMouseButton;
 
 var
   allDiagrams, nextDiag:pAllBlocks;
-  num, movx, movy: Integer;
+  num: Integer;
 
 begin
 
@@ -756,16 +930,17 @@ begin
   begin
     flag := False;
     AllDiagrams:=Blocks;
+    HintBlock.Prev:=nil;
+
     if CurHighLightedBlock <> nil then
     begin
 
-      num:=ConnectBlocks(CurHighLightedBlock, CurBlock, movx, movy);
+      num:=ConnectBlocks(CurHighLightedBlock, CurBlock);
 
       if CurHighLightedBlock.Next[num]=nil then
       begin
         CurHighLightedBlock.Next[num] := CurBlock;
         CurBlock.prev := CurHighLightedBlock;
-        moveAllBlocks(CurBlock,movx-(CurBlock.x-CurBlock.prev.x)+x0, movy-(CurBlock.y-CurBlock.prev.y)+y0);
       end;
 
 
@@ -797,6 +972,9 @@ begin
         AllDiagrams.Block:=CurBlock;
       end;
     end;
+
+    StructuriseBlocks();
+
     CurHighLightedBlock := CurBlock;
     HighLightBlock.Shape:=CurHighLightedBlock.Shape;
     HighLightBlock.H := CurHighLightedBlock.H+2;
@@ -804,8 +982,10 @@ begin
     HighLightBlock.y := CurHighLightedBlock.y-1;
     HighLightBlock.x := CurHighLightedBlock.x-1;
 
-    PaintField.Invalidate;
+
   end;
+
+  PaintField.Invalidate;
 end;
 
 end.
