@@ -1,24 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899.12.30 00:00:00.000.241,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit1.pas=</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.230,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit1.pas=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\HelpTypes.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.039,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UEditLines.dfm=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit3.dfm</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.374,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UEditBlocks.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.715,C:\Users\timaa\Desktop\Лабораторные\ОАиП\Project1.dproj=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Project1.dproj</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.289,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.949,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.533,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.920,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit2.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.797,=C:\Users\timaa\Desktop\Лабораторные\ОАиП\Unit1.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.925,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UMain.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.399,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\__recovery\UEditLines.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.990,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UStart.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.039,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UEditLines.pas=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit3.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.469,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit3.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.230,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\HelpTypes.pas=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit1.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.940,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit2.pas=</Transaction>
-    <Transaction>2024.05.06 12:27:15.366,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit3.pas</Transaction>
-    <Transaction>2024.05.06 12:28:09.093,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UFiles.pas=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit3.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.920,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit2.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.039,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit3.dfm=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UEditLines.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.374,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UEditBlocks.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.289,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.241,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit1.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.533,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.949,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.366,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit3.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.469,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit3.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.039,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit3.pas=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UEditLines.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.093,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Unit3.pas=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UFiles.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.797,=C:\Users\timaa\Desktop\Лабораторные\ОАиП\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.715,D:\Учёба\Лабораторные\ОАиП 2\Курсовая\Project1.dproj=C:\Users\timaa\Desktop\Лабораторные\ОАиП\Project1.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.399,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\__recovery\UEditLines.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.925,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UMain.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.990,=D:\Учёба\Лабораторные\ОАиП 2\Курсовая\UStart.pas</Transaction>
   </Transactions>
 	<ProjectSortOrder AutoSort="0" SortType="0">
     <File Path="UMain.pas"/>

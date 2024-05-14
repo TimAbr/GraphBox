@@ -7,7 +7,8 @@ uses
   System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Menus,
   Vcl.ComCtrls, Vcl.ToolWin, Vcl.Imaging.pngimage, Vcl.CheckLst, Vcl.Buttons,
-  HelpTypes, UEditBlocks, UEditLines, UFiles;
+  HelpTypes, UEditBlocks, UEditLines, UFiles, System.Actions, Vcl.ActnList,
+  System.ImageList, Vcl.ImgList, Vcl.ActnMan, Vcl.ActnCtrls;
 
 type
 
@@ -21,12 +22,11 @@ type
     Button1: TButton;
     MenuPanel: TPanel;
     EditFontSize: TEdit;
-    Label1: TLabel;
-    Image1: TImage;
+    FileName: TLabel;
     UpDown1: TUpDown;
     Field: TScrollBox;
     ChangeFontStyle: TComboBox;
-    SaveDialog1: TSaveDialog;
+    SaveDialog: TSaveDialog;
     InstrumentPanel: TPanel;
     Label2: TLabel;
     ShapePanel: TPanel;
@@ -35,6 +35,25 @@ type
     ButtonBlocks: TSpeedButton;
     ButtonLines: TSpeedButton;
     FrameEditLines: TFrameEditLines;
+    ActionList: TActionList;
+    Save: TAction;
+    SaveAs: TAction;
+    Open: TAction;
+    NewFile: TAction;
+    ExportAsPng: TAction;
+    ImageList1: TImageList;
+    Saveas1: TMenuItem;
+    N1: TMenuItem;
+    ExportAsPng1: TMenuItem;
+    OpenDialog: TOpenDialog;
+    tbMain: TToolBar;
+    ToolButton1: TToolButton;
+    ToolButton2: TToolButton;
+    ToolButton3: TToolButton;
+    ToolButton4: TToolButton;
+    ToolButton5: TToolButton;
+    ToolButton6: TToolButton;
+    SaveImageDialog: TSaveDialog;
 
     procedure Button1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -57,9 +76,16 @@ type
     procedure FormResize(Sender: TObject);
     procedure FieldMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure SaveAsExecute(Sender: TObject);
+    procedure SaveAsUpdate(Sender: TObject);
+    procedure OpenExecute(Sender: TObject);
+    procedure OpenUpdate(Sender: TObject);
+    procedure ExportAsPngExecute(Sender: TObject);
+    procedure ExportAsPngUpdate(Sender: TObject);
+    procedure NewFileExecute(Sender: TObject);
 
   private
-
 
   public
     { Public declarations }
@@ -69,6 +95,7 @@ procedure MoveAllBlocks(bl: pBlock; X, Y: Integer);
 function FindMinDist(X, Y: Integer; main: pointer): pBlock;
 procedure FindMinDistInTree(bl: pBlock; X, Y: Integer; var Min: Real;
   var res: pBlock; main: pBlock);
+procedure StructuriseBlocks();
 
 
 var
@@ -94,9 +121,8 @@ Uses UStart;
 procedure TFormMain.FormCreate(Sender: TObject);
 var
   StartBlock: TStartBlock;
+
 begin
-  FormMain.Hide;
-  FormStart.Show;
   flag := False;
   new(Blocks);
   Blocks.Next := nil;
@@ -114,28 +140,36 @@ begin
   FrameEditLines.UpDownHorizontal.Position:=50;
   FrameEditLines.UpDownVertical.Position:=50;
 
-  PaintField.width:=Field.Width;
-  PaintField.height:=Field.Height;
+  PaintField.width:=200;
+  PaintField.height:=200;
 
   New(HighLightBlock);
   CurHighLightedBlock := nil;
   HighLightColor:=clHighLight;
+  HighLightBlock.BorderColor:=HighLightColor;
+  HighLightBlock.FillColor:=clWhite;
+  HighLightBlock.ownCanvas:=PaintField.Canvas;
+  HighLightBlock.Text:='';
+
   DefaultColor:=clBlack;
 
   HintBlock:=nil;
   New(HintBlock);
   HintBlock.Prev:=nil;
 
+  PaintField.left:=0;
+  PaintField.Top:=0;
+
   HintBlock.ownCanvas:=FormMain.PaintField.Canvas;
-  HintBlock.Pen:=FormMain.PaintField.Canvas.Pen;
-  HintBlock.Brush:=FormMain.PaintField.Canvas.Brush;
   HintBlock.w:=FormMain.FrameEditBlocks.UpDownWidth.Position;
   HintBlock.h:=FormMain.FrameEditBlocks.UpDownHeight.Position;
 
   HintBlockStyle:=psDash;
   HintBlockColor:=clGrayText;
+  HintBlock.BorderColor:=HintBlockColor;
+  HintBlock.FillColor:=clWhite;
 
-  for var i := 0 to 3 do
+  for var i := 0 to 4 do
   begin
 
     StartBlock := TStartBlock.Create(ShapePanel);
@@ -151,16 +185,280 @@ begin
       Left := 25;
       Top := 60 + (Width + 20) * i;
 
-      dragMode := dmManual;
-      onMouseDown:=BlockStartDrag;
+      StartBlock.onMouseDown:=BlockStartDrag;
+
+      Hint:='Pull me';
+      ShowHint:=True;
     end;
 
   end;
+  FileName.Caption:='';
+end;
+
+
+
+procedure TFormMain.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  num:Integer;
+  AllDiagrams, nextDiag:pAllBlocks;
+begin
+
+ if (Key=$2e) and (CurhighLightedBlock<>nil) and not flag then
+  begin
+    AllDiagrams:=Blocks;
+
+    while (AllDiagrams.Next<>nil) and (AllDiagrams.Next.Block<>CurHighLightedBlock) do
+      AllDiagrams:=AllDiagrams.Next;
+
+    if AllDiagrams.Next<>nil then
+    begin
+      nextDiag:=AllDiagrams.Next.Next;
+      Dispose(AllDiagrams.Next);
+
+      AllDiagrams.Next := NextDiag;
+    end
+    else
+    begin
+      num:=0;
+
+      while CurHighLightedBlock.Prev.Next[num]<>CurHighLightedBlock do
+        inc(num);
+
+      CurHighLightedBlock.Prev.Next[num]:=nil;
+    end;
+
+    while (AllDiagrams.Next<>nil) do
+      AllDiagrams:=AllDiagrams.Next;
+
+    for num := Low(CurHighLightedBlock.Next) to High(CurHighLightedBlock.Next) do
+    begin
+      if CurHighLightedBlock.Next[num]<>nil then
+      begin
+        New(AllDiagrams.Next);
+        AllDiagrams:=AllDiagrams.Next;
+        AllDiagrams.Next:=nil;
+        AllDiagrams.Block:=CurHighLightedBlock.Next[num];
+        CurHighLightedBlock.Next[num].Prev:=nil;
+        CurHighLightedBlock.Next[num]:=nil;
+      end;
+    end;
+    Dispose(CurHighLightedBlock);
+    CurHighLightedBlock:=nil;
+    StructuriseBlocks();
+    PaintField.Invalidate;
+  end;
+
 end;
 
 procedure TFormMain.FormResize(Sender: TObject);
 begin
   PaintField.Invalidate();
+end;
+
+
+procedure TFormMain.NewFileExecute(Sender: TObject);
+begin
+  DestroyAll(Blocks);
+  Blocks:=nil;
+  New(Blocks);
+  Blocks.Next:=nil;
+  Blocks.Block:=nil;
+  PaintField.Invalidate;
+end;
+
+procedure TFormMain.OpenExecute(Sender: TObject);
+var
+  Arr: TArrBlocks;
+  ArrPrev, ArrPos: TArrInt;
+  len, n, ls, i:Integer;
+  FName: String;
+  temp: String[255];
+  f:File;
+  Start:pAllBlocks;
+begin
+  if (OpenDialog.Execute) then
+  begin
+    FName := OpenDialog.FileName;
+
+    AssignFile(f,FName);
+    Reset(f,1);
+
+    FileName.Caption:=Copy(FName,1,length(FName)-3);
+
+    DestroyAll(Blocks);
+
+    Blocks:=nil;
+    New(Blocks);
+    Blocks.Next:=nil;
+
+    BlockRead(f,n,4);
+    Start:=Blocks;
+    for var k := 1 to n do
+    begin
+      BlockRead(f,len,4);
+
+      setlength(Arr,len);
+      setlength(ArrPrev,len);
+      setlength(ArrPos,len);
+
+      for i := 0 to len-1 do
+      begin
+        New(Arr[i]);
+        BlockRead(f, Arr[i]^, sizeOf(TBlock));
+        Arr[i].ownCanvas:=PaintField.Canvas;
+      end;
+
+      for i := 0 to len-1 do
+        BlockRead(f, ArrPrev[i], 4);
+
+      for i := 0 to len-1 do
+        BlockRead(f, ArrPos[i], 4);
+
+      for i := 0 to len-1 do
+      begin
+        BlockRead(f,ls,4);
+        setlength(temp,ls);
+        BlockRead(f, temp, ls*2);
+
+        Arr[i].Text:=temp;
+      end;
+
+      New(Blocks.Next);
+      Blocks:=Blocks.Next;
+      Blocks.Block:=ConverteToTree(Arr,ArrPrev,ArrPos);
+      Blocks.Next:=nil;
+    end;
+    Blocks:=Start;
+    StructuriseBlocks();
+    PaintField.Invalidate();
+  end;
+end;
+
+procedure TFormMain.OpenUpdate(Sender: TObject);
+begin
+  Open.Enabled:=True;
+end;
+
+procedure TFormMain.SaveAsExecute(Sender: TObject);
+var
+  Arr: TArrBlocks;
+  ArrPrev, ArrPos: TArrInt;
+  len, n, ls, i:Integer;
+  FName: String;
+  f:File;
+  tempBlock:pAllBlocks;
+  temp:String[255];
+  tempArr: TNextArr;
+
+begin
+  if saveDialog.Execute then
+  begin
+    FName := SaveDialog.FileName;
+
+    if LowerCase(Copy(FName,length(FName)-2))<>'.gb' then
+    begin
+      AssignFile(f,FName+'.gb');
+      FileName.Caption:=FName;
+    end
+    else
+    begin
+      AssignFile(f,FName);
+      FileName.Caption:=Copy(FName,1,length(FName)-3);
+    end;
+    Rewrite(f,1);
+
+    tempBlock:=Blocks;
+    n:=0;
+
+    while tempBlock.Next<>nil do
+    begin
+      tempBlock:=tempBlock.Next;
+      inc(n);
+    end;
+
+    BlockWrite(f, n, 4);
+    tempBlock:=Blocks;
+
+    for var k := 1 to n do
+    begin
+      tempBlock:=tempBlock.Next;
+
+      len:=0;
+      ConverteToMas(tempBlock.Block, Arr, ArrPrev,ArrPos,len);
+      inc(len);
+
+      BlockWrite(f, len, 4);
+
+      for i := 0 to len-1 do
+      begin
+        temp:=Arr[i].Text;
+        ls:=length(Arr[i].Text);
+
+        Arr[i].Text:='';
+
+        tempArr:=Arr[i].Next;
+        Arr[i].Next:=nil;
+
+        BlockWrite(f, Arr[i]^, sizeOf(TBlock));
+
+        Arr[i].Next:=tempArr;
+        Arr[i].text:=temp;
+      end;
+
+      for i := 0 to len-1 do
+        BlockWrite(f, ArrPrev[i], 4);
+
+      for i := 0 to len-1 do
+        BlockWrite(f, ArrPos[i], 4);
+
+      for i := 0 to len-1 do
+      begin
+        ls:=length(Arr[i].Text);
+        BlockWrite(f, ls, 4);
+        temp:=Arr[i].Text;
+        BlockWrite(f, temp, ls*2);
+      end;
+
+    end;
+    closefile(f);
+  end;
+end;
+
+procedure TFormMain.SaveAsUpdate(Sender: TObject);
+begin
+  SaveAs.Enabled:=Blocks.Next<>nil;
+end;
+
+procedure TFormMain.ExportAsPngExecute(Sender: TObject);
+var
+  FName: String;
+  BitMap: TBitMap;
+  PNG: TPNGObject;
+begin
+  if saveImageDialog.Execute then
+  begin
+    BitMap:=TBitMap.Create;
+    PNG:=TPNGObject.Create;
+    BitMap.Height:=PaintField.Height;
+    BitMap.width:=PaintField.width;
+
+    BitMap.Canvas.CopyRect(Rect(0,0,BitMap.Height,BitMap.width),PaintField.Canvas,Rect(0,0,PaintField.Height,PaintField.width));
+    PNG.Assign(BitMap);
+
+    FName := SaveImageDialog.FileName;
+    if LowerCase(Copy(FName,length(FName)-2))<>'.png' then
+      FName:=FName+'.png';
+
+    PNG.SaveToFile(FName);
+    BitMap.Free;
+    PNG.Free;
+  end;
+end;
+
+procedure TFormMain.ExportAsPngUpdate(Sender: TObject);
+begin
+  ExportAsPng.Enabled:=Blocks.Next<>nil;
 end;
 
 procedure TFormMain.FieldMouseWheel(Sender: TObject; Shift: TShiftState;
@@ -228,7 +526,7 @@ end;
 procedure DrawLine(bl: pBlock; num: Integer);
 begin
   case bl.Prev.Shape of
-  stRectangle:
+  stRectangle, stCircle, stTerminator:
   begin
     case num of
     0:
@@ -262,18 +560,17 @@ begin
     end;
     1:
     begin
+
       bl.ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*3) div 4,bl.Prev.y+(bl.Prev.h*3) div 4);
-      bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+10,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.Prev.y+bl.Prev.h + FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
       bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
       bl.ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
     end;
     end;
   end;
   stCycle:
-  begin
-
-  end;
-  stCircle:
   begin
 
   end;
@@ -314,10 +611,7 @@ end;
 Procedure ShowHintBlock(num: Integer);
 
 begin
-  HintBlock.Pen.Style:=HintBlockStyle;
-  HintBlock.Pen.Color:=HintBlockColor;
-
-
+  FormMain.PaintField.Canvas.Pen.Style:=HintBlockStyle;
   case num of
   0:
   begin
@@ -339,11 +633,10 @@ begin
 
   end;
 
-  DrawLine(HintBlock,num);
   DrawBlock(HintBlock);
+  DrawLine(HintBlock,num);
 
-  HintBlock.Pen.Style:=psSolid;
-  HintBlock.Pen.Color:=HintBlockColor;
+  FormMain.PaintField.Canvas.Pen.Style:=psSolid;
 end;
 
 procedure DrawAllBlocks();
@@ -359,51 +652,66 @@ begin
     temp := temp.Next;
     DrawTree(temp.Block, maxx, maxy);
   end;
-  if (CurBlock<>nil) and Flag then
-    DrawTree(CurBlock, maxx, maxy);
+  if (CurBlock<>nil)then
+  begin
+    if CurBlock.y+200>maxy then
+      maxy:=CurBlock.y+200;
+    if CurBlock.x+200>maxx then
+      maxx:=CurBlock.x+200;
 
-  if maxx+100>=FormMain.PaintField.width then
-    FormMain.PaintField.width:=maxx+100
-  else
-    FormMain.PaintField.width:=FormMain.Field.width;
+    if Flag then
+      DrawTree(CurBlock, maxx, maxy);
+  end;
 
-  if maxy+100>=FormMain.PaintField.height then
-    FormMain.PaintField.height:=maxy+100
-  else
-    FormMain.PaintField.Height:=FormMain.Field.Height;
+
+  FormMain.PaintField.width:=maxx+200;
+  FormMain.PaintField.height:=maxy+200;
 
   if CurHighLightedBlock<>nil then
   begin
-    HighLightBlock.ownCanvas:=CurHighLightedBlock.ownCanvas;
-    HighLightBlock.Pen:=CurHighLightedBlock.Pen;
-    HighLightBlock.Pen.Color:=HighLightColor;
-    HighLightBlock.Brush:=CurHighLightedBlock.Brush;
+    HighLightBlock.ownCanvas.Pen.Width:=2;
+    HighLightBlock.Shape:=CurHighLightedBlock.Shape;
+    HighLightBlock.H := CurHighLightedBlock.H+1;
+    HighLightBlock.W := CurHighLightedBlock.W+1;
+    HighLightBlock.y := CurHighLightedBlock.y;
+    HighLightBlock.x := CurHighLightedBlock.x;
+
+    HighlightBlock.OwnCanvas.Brush.Style:=bsClear;
     DrawBlock(HighLightBlock);
-    HighLightBlock.Pen.Color:=DefaultColor;
+    HighlightBlock.OwnCanvas.Brush.Style:=bsSolid;
+    HighLightBlock.ownCanvas.Pen.Width:=1;
   end;
 
   if HintBlock.Prev<>nil then
     ShowHintBlock(ConnectNum);
-
-
 end;
+
+
+
 
 
 
 procedure TFormMain.PaintFieldDblClick(Sender: TObject);
 begin
-  EditText.Show;
+  if CurHighLightedBlock<>nil then
+  begin
+    EditText.Show;
 
-  EditText.Left := CurBlock.x;
-  EditText.Top := CurBlock.y;
-  EditText.Height := CurBlock.h;
-  EditText.Width := CurBlock.h;
+    EditText.Left := CurHighLightedBlock.x;
+    EditText.Top := CurHighLightedBlock.y;
+    EditText.Height := CurHighLightedBlock.h;
+    EditText.Width := CurHighLightedBlock.h;
 
-  EditText.prev := CurBlock;
 
-  EditText.Text := CurBlock.Text;
-  Flag:=False;
-  CurBlock:=nil;
+    EditText.prev := CurHighLightedBlock;
+
+    EditText.Alignment:=TAlignment(ord(EditText.Prev.TextHorAllign));
+    EditText.Font.Size:=EditText.Prev.FontSize;
+
+    EditText.Text := CurHighLightedBlock.Text;
+    Flag:=False;
+    CurHighLightedBlock:=nil;
+  end;
 end;
 
 procedure TFormMain.PaintFieldPaint(Sender: TObject);
@@ -420,7 +728,7 @@ begin
   begin
     case bl.Shape of
 
-      stRectangle..stCycle:
+      stRectangle..stTerminator:
       begin
         if (bl.x<=x) and (bl.y<=y) and (x<=bl.x+bl.w) and (y<=bl.y+bl.h)then
           res:=bl;
@@ -438,55 +746,6 @@ begin
     end;
   end;
 end;
-
-
-procedure IsBeforeInTree(bl, check, root: pBlock; var res, ex: Boolean);
-var
-  temp: pBlock;
-begin
-  if bl=root then
-    ex:=True;
-
-  if ex then
-    exit;
-
-  if (bl <> nil) and (res=False) then
-  begin
-    if bl=check then
-      res:=True;
-
-    if res=False then
-    begin
-      temp := bl;
-      for var i := high(temp.Next) downto Low(temp.Next) do
-      begin
-        temp := bl.Next[i];
-        IsBeforeInTree(temp,check,root,res,ex);
-        if Res=True then
-          exit;
-      end;
-    end;
-  end;
-end;
-
-function IsBefore(check,root: pBlock):  Boolean;
-var
-  tempTree: pAllBlocks;
-  bl: pBlock;
-  exitCond: Boolean;
-begin
-  tempTree := Blocks;
-  bl:=root;
-  while bl.Prev<>nil do
-    bl:=bl.Prev;
-
-  Result:=False;
-  ExitCond:=False;
-
-  IsBeforeInTree(bl, check, root, Result, ExitCond);
-end;
-
-
 
 
 function FindBlock(x,y:Integer):  pBlock;
@@ -523,6 +782,8 @@ begin
     else
       Result:=0;
 
+  stCircle, stTerminator:
+    Result:=0;
   end;
 end;
 
@@ -556,7 +817,7 @@ end;
 
 Procedure StructuriseBlocksInTree(bl:pBlock; Var dist: Integer; num, level: Integer);
 var
-  ContinueCompacting, temp1, temp2: Boolean;
+  ContinueCompacting, temp1: Boolean;
   tempBlock: pBlock;
 begin
   if (bl<>nil) then
@@ -629,12 +890,13 @@ var
   dist: Integer;
 begin
   temp := Blocks;
-  dist:=0;
+
 
   SetDefaultCoords(-1000,-1000);
   while (temp.Next <> Nil) do
   begin
     temp := temp.Next;
+    dist:=0;
     StructuriseBlocksInTree(temp.Block, dist, 0, 1);
   end;
 end;
@@ -656,24 +918,6 @@ begin
   FrameEditLines.Show;
 end;
 
-
-
-function FindMinDist(X, Y: Integer; main: pointer): pBlock;
-var
-  temp: pAllBlocks;
-  curMin: Real;
-begin
-  curMin := MaxInt;
-  temp := Blocks;
-  Result := Nil;
-  while temp.Next <> Nil do
-  begin
-    temp := temp.Next;
-    FindMinDistInTree(temp.Block, X, Y, curMin, Result, main);
-  end;
-
-end;
-
 procedure FindMinDistInTree(bl: pBlock; X, Y: Integer; var Min: Real;
   var res: pBlock; main: pBlock);
 var
@@ -688,11 +932,12 @@ begin
 
     if not Flag then
       begin
-      tempDist := sqrt(sqr(X - bl.x) + sqr(Y - bl.y));
+      tempDist := sqrt(sqr(X - (bl.x+bl.w div 2)) + sqr(Y - (bl.y+bl.h div 2)));
 
-      if (tempDist < Min) and (x < FormMain.FrameEditLines.UpDownHorizontal.Position+bl.x+bl.w+210) and (y < FormMain.FrameEditLines.UpDownVertical.Position+bl.y+bl.h+210) then
+      if (tempDist < Min) and (x < FormMain.FrameEditLines.UpDownHorizontal.Position+bl.x+bl.w +210)
+         and (y < FormMain.FrameEditLines.UpDownVertical.Position+bl.y+bl.h+210) then
       begin
-        if (bl.x-10<=x) then
+        if (bl.x-10<=x) and (y>=bl.y-FormMain.FrameEditLines.UpDownVertical.Position-210) then
         begin
           Min := tempDist;
           res := bl;
@@ -709,6 +954,27 @@ begin
   end;
 end;
 
+
+function FindMinDist(X, Y: Integer; main: pointer): pBlock;
+var
+  temp: pAllBlocks;
+  curMin: Real;
+begin
+  curMin := MaxInt;
+  temp := Blocks;
+  Result := Nil;
+  if main<>nil then
+  begin
+    x:=x+pBlock(main).w div 2;
+    y:=y+pBlock(main).h div 2;
+  end;
+  while temp.Next <> Nil do
+  begin
+    temp := temp.Next;
+    FindMinDistInTree(temp.Block, X, Y, curMin, Result, main);
+  end;
+
+end;
 
 procedure TFormMain.BlockStartDrag(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
@@ -731,12 +997,12 @@ procedure TFormMain.StartBlockDragDrop(Sender, Source: TObject; X, Y: Integer);
 Var
   AllDiagrams: pAllBlocks;
   temp:pBlock;
-  movx, movy, num: Integer;
+  num: Integer;
 
 begin
   Dispose(CurBlock);
   CurBlock:=nil;
-  HintBlock.Prev:=0;
+  HintBlock.Prev:=nil;
   if CurHighLightedBlock = nil then
   begin
     AllDiagrams := Blocks;
@@ -774,7 +1040,6 @@ begin
     begin
       CurHighLightedBlock.Next[num]:=temp;
       CurHighLightedBlock.Next[num].Prev:=CurHighLightedBlock;
-      //moveAllBlocks(temp,movx-(temp.x-temp.prev.x)+x0, movy-(temp.y-temp.prev.y)+y0);
     end
     else
     begin
@@ -792,40 +1057,36 @@ begin
     end;
   end;
 
-  with AllDiagrams^ do
+  temp.Shape := (Source as TStartBlock).Shape;
+
+  case temp.Shape of
+    stRectangle, stCycle:
+        SetLength(Temp.Next, 2);
+
+    stDecision:
+        SetLength(Temp.Next, 3);
+
+    stCircle, stTerminator:
+        SetLength(Temp.Next, 1);
+  end;
+
+  for var i := 0 to High(Temp.Next) do
+    Temp.Next[i] := nil;
+
+  with temp^ do
   begin
-
-    temp.Shape := (Source as TStartBlock).Shape;
-
-    case temp.Shape of
-      stRectangle, stCycle:
-        begin
-          SetLength(Temp.Next, 2);
-        end;
-      stDecision:
-        begin
-          SetLength(Temp.Next, 3);
-        end;
-
-    end;
-
-    for var i := 0 to High(Temp.Next) do
-      Temp.Next[i] := nil;
-
-    with temp^ do
-    begin
-      W := FrameEditBlocks.UpDownWidth.Position;
-      H := FrameEditBlocks.UpDownHeight.Position;
-      ownCanvas:= (Sender as TPaintBox).Canvas;
-      Pen:=ownCanvas.Pen;
-      Brush:=ownCanvas.Brush;
-      Brush.Color:=clWhite;
-      Pen.Color:=clBlack;
-    end;
-
+    W := FrameEditBlocks.UpDownWidth.Position;
+    H := FrameEditBlocks.UpDownHeight.Position;
+    ownCanvas:= (Sender as TPaintBox).Canvas;
+    FillColor:=clWhite;
+    BorderColor:=clBlack;
   end;
 
   temp.Text := 'Hello';
+  temp.FontSize:=10;
+  temp.TextHorAllign:=hCenter;
+  temp.TextInterval:=4;
+  temp.TextVertAllign:=vCenter;
 
   with (Source as TStartBlock) do
   begin
@@ -851,11 +1112,15 @@ end;
 procedure TFormMain.StartBlockDragOver(Sender, Source: TObject; X, Y: Integer;
   State: TDragState; var Accept: Boolean);
 
+var
+  Connect: Boolean;
+
 Var
-  num, movx, movy:Integer;
+  num:Integer;
 begin
   if Sender = PaintField then
   begin
+
     Accept := True;
     CurBlock.x:=x;
     CurBlock.y:=y;
@@ -866,7 +1131,15 @@ begin
 
       num:=ConnectBlocks(CurHighLightedBlock, CurBlock);
 
-      if CurHighLightedBlock.Next[num]=nil then
+      Connect:=(CurHighLightedBlock.Next[num]=nil);
+
+      if (CurHighLightedBlock.Shape in [stCircle, stTerminator]) and (CurHighLightedBlock.Prev<>nil) then
+        Connect:=False;
+
+      if (CurBlock.Shape in [stCircle, stTerminator]) and (CurBlock.Next[0]<>nil) then
+        Connect:=False;
+
+      if Connect then
       begin
         HighLightBlock.Shape:=CurHighLightedBlock.Shape;
         HighLightBlock.H := CurHighLightedBlock.H+2;
@@ -888,12 +1161,10 @@ begin
       CurHighLightedBlock := nil;
     end;
 
-    PaintField.Invalidate();
-
   end;
+  PaintField.Invalidate();
 
 end;
-
 
 procedure TFormMain.BlockMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
@@ -921,8 +1192,6 @@ begin
     x0 := X;
     y0 := Y;
 
-    CurBlock.PrevX:=X;
-    CurBlock.PrevY:=Y;
     if CurBlock.Prev<>nil then
     begin
       num:=0;
@@ -936,8 +1205,6 @@ begin
       HighLightBlock.y := CurHighLightedBlock.y-1;
       HighLightBlock.x := CurHighLightedBlock.x-1;
 
-      //PaintField.Invalidate();
-
       CurBlock.Prev.Next[num]:=nil;
       CurBlock.Prev:=nil;
     end;
@@ -949,6 +1216,7 @@ procedure TFormMain.BlockMouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
 var
   num: Integer;
+  Connect:Boolean;
 
 begin
 
@@ -959,9 +1227,6 @@ begin
     y0:=y;
     x0:=x;
 
-    CurBlock.PrevX:=MaxInt;
-    CurBlock.PrevY:=MaxInt;
-
     CurHighLightedBlock := FindMinDist(CurBlock.x, CurBlock.y, CurBlock);
     HintBlock.Prev:=nil;
 
@@ -969,7 +1234,15 @@ begin
     begin
       num:=ConnectBlocks(CurHighLightedBlock, CurBlock);
 
-      if CurHighLightedBlock.Next[num]=nil then
+      Connect:=(CurHighLightedBlock.Next[num]=nil);
+
+      if (CurHighLightedBlock.Shape in [stCircle, stTerminator]) and (CurHighLightedBlock.Prev<>nil) then
+        Connect:=False;
+
+      if (CurBlock.Shape in [stCircle, stTerminator]) and (CurBlock.Next[0]<>nil) then
+        Connect:=False;
+
+      if Connect then
       begin
         HighLightBlock.Shape:=CurHighLightedBlock.Shape;
         HighLightBlock.H := CurHighLightedBlock.H+2;
@@ -1054,13 +1327,7 @@ begin
     StructuriseBlocks();
 
     CurHighLightedBlock := CurBlock;
-    HighLightBlock.Shape:=CurHighLightedBlock.Shape;
-    HighLightBlock.H := CurHighLightedBlock.H+2;
-    HighLightBlock.W := CurHighLightedBlock.W+2;
-    HighLightBlock.y := CurHighLightedBlock.y-1;
-    HighLightBlock.x := CurHighLightedBlock.x-1;
-
-
+    CurBlock:=nil;
   end;
 
   PaintField.Invalidate;

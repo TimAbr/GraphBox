@@ -29,6 +29,7 @@ Uses UMain;
 
 procedure TFrameEditLines.UpDownChanging(Sender: TObject; var AllowChange: Boolean);
 begin
+  StructuriseBlocks();
   FormMain.PaintField.Invalidate();
 end;
 

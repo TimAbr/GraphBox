@@ -40,6 +40,7 @@ var
 begin
   temp := Blocks;
   ReSizeAll(UpDownWidth.Position, UpDownHeight.Position);
+  StructuriseBlocks();
   FormMain.PaintField.Invalidate();
 end;
 

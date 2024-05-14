@@ -8,7 +8,7 @@ interface
     pAllBlocks = ^AllBlocks;
     pBlock =  ^TBlock;
 
-    TShapeType = (stRectangle, stCircle, stDecision, stCycle);
+    TShapeType = (stRectangle, stCircle, stDecision, stCycle, stTerminator);
     TStartBlock = class(TShape)
     public
       FPen: TPen;
@@ -30,20 +30,23 @@ interface
       Next: pAllBlocks;
     end;
 
-    THorAllign = (hLeft, hCenter, hRight);
+    THorAllign = (hLeft, hRight, hCenter);
     TVertAllign = (vUp, vCenter, vDown);
+    TNextArr = Array of pBlock;
 
-    TBlock = record
-      Pen:TPen;
-      Brush:TBrush;
+    TBlock = packed record
+      BorderColor:Integer;
+      FillColor:Integer;
       Text:String;
       Shape:TShapeType;
-      x,y,w,h, PrevX, PrevY:Integer;
-      Next: Array of pBlock;
+      x,y,w,h, FontSize:Integer;
+      Next: TNextArr;
       Prev: pBlock;
       ownCanvas:TCanvas;
       TextHorAllign:THorAllign;
       TextVertAllign:TVertAllign;
+      TextInterval:Integer;
+
     end;
 
     TProEdit = class(TRichEdit)
@@ -52,6 +55,8 @@ interface
     end;
 
     procedure DrawBlock(bl: pBlock);
+    procedure WriteText(bl: pBlock);
+
 
 implementation
 
@@ -88,7 +93,7 @@ end;
 
 procedure TStartBlock.Paint;
 var
-  X, Y, W, H, S: Integer;
+  X, Y, W, H, r, tempColor: Integer;
 begin
 
   with Canvas do
@@ -108,13 +113,13 @@ begin
       stRectangle:
         Rectangle(X+1, Y+1, X + W-1, Y + H-1);
       stCircle:
-        Ellipse(X, Y, X + W-1, Y + H-1);
+        Ellipse(X+1, Y+1, X + W-1, Y + H-1);
       stDecision:
       begin
 
         Polygon([Point(x+w-1, y+h div 2),
                  Point(x+w div 2,y+h-1),
-                 Point(x,y+h div 2),
+                 Point(x+1,y+h div 2),
                  Point(x+w div 2,y)]);
       end;
       stCycle:
@@ -123,26 +128,57 @@ begin
                  Point(x+w-1, y+h div 2),
                  Point(x+(w div 3)*2, y+h-1),
                  Point(x+(w div 3), y+h-1),
-                 Point(x,y+h div 2),
+                 Point(x+1,y+h div 2),
                  Point(x+w div 3,y)]);
+      end;
+      stTerminator:
+      begin
+        while w mod 4 <> 0 do
+          dec(w);
+
+        if h mod 2<>0 then
+          dec(h);
+
+        if 2*h<=w then
+          r:=h div 2-1
+        else
+          r:=w div 4;
+
+
+        Pie(x+1,y+1, x+2*r+1,y+h-1, x+r+1,y+1, x+r+1, y+h-1);
+        Pie(x+w-1-2*r,y+1, x+w-1,y+h-1, x+w-r,y+h-1, x+w-r,y+1);
+
+        tempColor:=Pen.Color;
+        Pen.Color:=ClWhite;
+        Rectangle(x+r,y+1,x+w-r,y+h-1);
+        Pen.Color:=tempColor;
+
+        moveto(x+r,y+1);
+        lineto(x+w-r,y+1);
+        moveto(x+r,y+h-1);
+        lineto(x+w-r,y+h-1);
       end;
     end;
   end;
 end;
 
 procedure DrawBlock(bl: pBlock);
+var
+  r, tempColor:Integer;
+  tempBS:TBrushStyle;
+
 begin
-  bl.ownCanvas.Pen := bl.Pen;
-  bl.ownCanvas.Brush := bl.Brush;
+
   with bl.ownCanvas do
   begin
-    Pen := bl.Pen;
-    Brush := bl.Brush;
+    Pen.Color := bl.BorderColor;
+    if Brush.Style<>bsClear then
+      Brush.Color := bl.FillColor;
     case bl.Shape of
       stRectangle:
         Rectangle(bl.X, bl.Y, bl.X + bl.W, bl.Y + bl.H);
       stCircle:
-        Ellipse(bl.X, bl.Y, bl.X + bl.W, bl.Y + bl.H);
+        Ellipse(bl.X+(bl.w-bl.h) div 2, bl.Y, bl.X + (bl.w+bl.h) div 2, bl.Y + bl.H);
       stDecision:
       begin
 
@@ -160,9 +196,116 @@ begin
                  Point(bl.x,bl.y+bl.h div 2),
                  Point(bl.x+bl.w div 3,bl.y)]);
       end;
+      stTerminator:
+      begin
+
+        with bl^ do
+        begin
+
+          if 2*h<=w then
+            r:=h div 2
+          else
+            r:=w div 4;
+
+
+          Pie(x,y, x+2*r,y+h, x + r,y, x+r, y+h);
+          Pie(x+w-2*r,y, x+w,y+h, x+w-r,y+h, x+w-r,y);
+
+          tempColor:=Pen.Color;
+          Pen.Color:=ClWhite;
+          if Brush.Style<>bsClear then
+            Rectangle(x+r-1,y,x+w-r+1,y+h)
+          else
+            Rectangle(x+r,y,x+w-r+1,y+h);
+          Pen.Color:=tempColor;
+
+          moveto(x+r-1,y);
+          lineto(x+w-r+1,y);
+          moveto(x+r-1,y+h);
+          lineto(x+w-r+1,y+h);
+        end;
+      end;
     end;
   end;
+
+  writetext(bl);
 end;
 
+procedure WriteText(bl: pBlock);
+var
+  th,tw:Integer;
+  x,y:Integer;
+  text:String;
+begin
+  tw:=0;
 
+  if length(bl.text)<>0 then
+  begin
+    bl.OwnCanvas.Font.Size:=bl.FontSize;
+    bl.OwnCanvas.Font.Name:='Tahoma';
+    th:=0;
+    for var n := 1 to length(bl.text) do
+      if (bl.text[n]=#13) then
+      begin
+        th:=th+bl.ownCanvas.textHeight(text)+bl.textInterval;
+        text:='';
+      end
+      else
+      if bl.text[n]<>#10 then
+        text:=text+bl.text[n];
+
+    th:=th+bl.ownCanvas.textHeight(text);
+    text:='';
+
+    bl.ownCanvas.Brush.Style:=bsClear;
+    case bl.TextVertAllign of
+      vUp:
+        y:=bl.y+2;
+      vCenter:
+        y:=bl.y+2+(bl.h-4-th) div 2;
+      vDown:
+        y:=bl.y+2+bl.h-4-th;
+
+    end;
+    for var n := 1 to length(bl.text) do
+    begin
+      if (bl.text[n]=#13) then
+      begin
+        case bl.TextHorAllign of
+          hLeft:
+            x:=bl.x+2;
+          hCenter:
+            x:=bl.x+2+(bl.w-4-bl.ownCanvas.textWidth(text)) div 2;
+          hRight:
+            x:=bl.x+2+(bl.w-4 - bl.ownCanvas.textWidth(text));
+        end;
+        bl.ownCanvas.textout(x,y,text);
+        y:=y+bl.ownCanvas.textHeight(text)+bl.textInterval;
+        text:='';
+      end
+      else
+      if bl.text[n]<>#10 then
+        text:=text+bl.text[n];
+    end;
+
+      if text<>#10 then
+      begin
+        case bl.TextHorAllign of
+          hLeft:
+            x:=bl.x+2;
+          hCenter:
+            x:=bl.x+2+(bl.w-4-bl.ownCanvas.textWidth(text)) div 2;
+          hRight:
+            x:=bl.x+2+(bl.w-4 - bl.ownCanvas.textWidth(text));
+        end;
+        bl.ownCanvas.textout(x,y,text);
+        text:='';
+      end;
+
+    bl.ownCanvas.Brush.Style:=bsSolid;
+  end;
+
+
+
+end;
 end.

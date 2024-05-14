@@ -42,6 +42,7 @@ object FrameEditBlocks: TFrameEditBlocks
     Height = 21
     Associate = EditHeight
     Min = 10
+    Max = 200
     Position = 50
     TabOrder = 1
     OnChanging = UpDownChanging
@@ -64,6 +65,7 @@ object FrameEditBlocks: TFrameEditBlocks
     Height = 21
     Associate = EditWidth
     Min = 10
+    Max = 200
     Position = 50
     TabOrder = 3
     OnChanging = UpDownChanging
