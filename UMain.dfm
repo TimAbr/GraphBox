@@ -108,14 +108,14 @@ object FormMain: TFormMain
     ParentColor = False
     TabOrder = 2
     Touch.InteractiveGestures = [igPan, igTwoFingerTap]
+    OnClick = FieldClick
     OnDragOver = StartBlockDragOver
     OnMouseWheel = FieldMouseWheel
-    ExplicitTop = 61
     object PaintField: TPaintBox
-      Left = -3
+      Left = 1
       Top = 1
-      Width = 636
-      Height = 439
+      Width = 638
+      Height = 406
       OnDblClick = PaintFieldDblClick
       OnDragDrop = StartBlockDragDrop
       OnDragOver = StartBlockDragOver

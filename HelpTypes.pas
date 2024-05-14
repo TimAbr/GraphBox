@@ -42,7 +42,6 @@ interface
       x,y,w,h, FontSize:Integer;
       Next: TNextArr;
       Prev: pBlock;
-      ownCanvas:TCanvas;
       TextHorAllign:THorAllign;
       TextVertAllign:TVertAllign;
       TextInterval:Integer;
@@ -54,8 +53,8 @@ interface
       prev: pBlock;
     end;
 
-    procedure DrawBlock(bl: pBlock);
-    procedure WriteText(bl: pBlock);
+    procedure DrawBlock(bl: pBlock; ownCanvas: TCanvas);
+    procedure WriteText(bl: pBlock; ownCanvas: TCanvas);
 
 
 implementation
@@ -162,14 +161,14 @@ begin
   end;
 end;
 
-procedure DrawBlock(bl: pBlock);
+procedure DrawBlock(bl: pBlock; ownCanvas: TCanvas);
 var
   r, tempColor:Integer;
   tempBS:TBrushStyle;
 
 begin
 
-  with bl.ownCanvas do
+  with ownCanvas do
   begin
     Pen.Color := bl.BorderColor;
     if Brush.Style<>bsClear then
@@ -228,10 +227,10 @@ begin
     end;
   end;
 
-  writetext(bl);
+  writetext(bl, ownCanvas);
 end;
 
-procedure WriteText(bl: pBlock);
+procedure WriteText(bl: pBlock; ownCanvas: TCanvas);
 var
   th,tw:Integer;
   x,y:Integer;
@@ -241,23 +240,23 @@ begin
 
   if length(bl.text)<>0 then
   begin
-    bl.OwnCanvas.Font.Size:=bl.FontSize;
-    bl.OwnCanvas.Font.Name:='Tahoma';
+    OwnCanvas.Font.Size:=bl.FontSize;
+    OwnCanvas.Font.Name:='Tahoma';
     th:=0;
     for var n := 1 to length(bl.text) do
       if (bl.text[n]=#13) then
       begin
-        th:=th+bl.ownCanvas.textHeight(text)+bl.textInterval;
+        th:=th+ownCanvas.textHeight(text)+bl.textInterval;
         text:='';
       end
       else
       if bl.text[n]<>#10 then
         text:=text+bl.text[n];
 
-    th:=th+bl.ownCanvas.textHeight(text);
+    th:=th+ownCanvas.textHeight(text);
     text:='';
 
-    bl.ownCanvas.Brush.Style:=bsClear;
+    ownCanvas.Brush.Style:=bsClear;
     case bl.TextVertAllign of
       vUp:
         y:=bl.y+2;
@@ -275,12 +274,12 @@ begin
           hLeft:
             x:=bl.x+2;
           hCenter:
-            x:=bl.x+2+(bl.w-4-bl.ownCanvas.textWidth(text)) div 2;
+            x:=bl.x+2+(bl.w-4-ownCanvas.textWidth(text)) div 2;
           hRight:
-            x:=bl.x+2+(bl.w-4 - bl.ownCanvas.textWidth(text));
+            x:=bl.x+2+(bl.w-4 - ownCanvas.textWidth(text));
         end;
-        bl.ownCanvas.textout(x,y,text);
-        y:=y+bl.ownCanvas.textHeight(text)+bl.textInterval;
+        ownCanvas.textout(x,y,text);
+        y:=y+ownCanvas.textHeight(text)+bl.textInterval;
         text:='';
       end
       else
@@ -294,15 +293,15 @@ begin
           hLeft:
             x:=bl.x+2;
           hCenter:
-            x:=bl.x+2+(bl.w-4-bl.ownCanvas.textWidth(text)) div 2;
+            x:=bl.x+2+(bl.w-4-ownCanvas.textWidth(text)) div 2;
           hRight:
-            x:=bl.x+2+(bl.w-4 - bl.ownCanvas.textWidth(text));
+            x:=bl.x+2+(bl.w-4 - ownCanvas.textWidth(text));
         end;
-        bl.ownCanvas.textout(x,y,text);
+        ownCanvas.textout(x,y,text);
         text:='';
       end;
 
-    bl.ownCanvas.Brush.Style:=bsSolid;
+    ownCanvas.Brush.Style:=bsSolid;
   end;
 
 

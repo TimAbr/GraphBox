@@ -84,6 +84,7 @@ type
     procedure ExportAsPngExecute(Sender: TObject);
     procedure ExportAsPngUpdate(Sender: TObject);
     procedure NewFileExecute(Sender: TObject);
+    procedure FieldClick(Sender: TObject);
 
   private
 
@@ -96,6 +97,7 @@ function FindMinDist(X, Y: Integer; main: pointer): pBlock;
 procedure FindMinDistInTree(bl: pBlock; X, Y: Integer; var Min: Real;
   var res: pBlock; main: pBlock);
 procedure StructuriseBlocks();
+procedure DrawAllBlocks(ownCanvas: TCanvas);
 
 
 var
@@ -148,7 +150,6 @@ begin
   HighLightColor:=clHighLight;
   HighLightBlock.BorderColor:=HighLightColor;
   HighLightBlock.FillColor:=clWhite;
-  HighLightBlock.ownCanvas:=PaintField.Canvas;
   HighLightBlock.Text:='';
 
   DefaultColor:=clBlack;
@@ -160,7 +161,6 @@ begin
   PaintField.left:=0;
   PaintField.Top:=0;
 
-  HintBlock.ownCanvas:=FormMain.PaintField.Canvas;
   HintBlock.w:=FormMain.FrameEditBlocks.UpDownWidth.Position;
   HintBlock.h:=FormMain.FrameEditBlocks.UpDownHeight.Position;
 
@@ -306,7 +306,6 @@ begin
       begin
         New(Arr[i]);
         BlockRead(f, Arr[i]^, sizeOf(TBlock));
-        Arr[i].ownCanvas:=PaintField.Canvas;
       end;
 
       for i := 0 to len-1 do
@@ -443,7 +442,9 @@ begin
     BitMap.Height:=PaintField.Height;
     BitMap.width:=PaintField.width;
 
-    BitMap.Canvas.CopyRect(Rect(0,0,BitMap.Height,BitMap.width),PaintField.Canvas,Rect(0,0,PaintField.Height,PaintField.width));
+    DrawAllBlocks(BitMap.Canvas);
+
+    //BitMap.Canvas.CopyRect(Rect(0,0,BitMap.Height,BitMap.width),PaintField.Canvas,Rect(0,0,PaintField.Height,PaintField.width));
     PNG.Assign(BitMap);
 
     FName := SaveImageDialog.FileName;
@@ -459,6 +460,22 @@ end;
 procedure TFormMain.ExportAsPngUpdate(Sender: TObject);
 begin
   ExportAsPng.Enabled:=Blocks.Next<>nil;
+end;
+
+procedure TFormMain.FieldClick(Sender: TObject);
+begin
+  if (EditText.Visible) then
+  begin
+    EditText.prev.text := EditText.Text;
+    EditText.Hide;
+  end;
+
+  if (CurHighLightedBlock <> Nil) then
+  begin
+    CurHighLightedBlock := Nil;
+  end;
+
+  PaintField.Invalidate();
 end;
 
 procedure TFormMain.FieldMouseWheel(Sender: TObject; Shift: TShiftState;
@@ -523,7 +540,7 @@ begin
   end;
 end;
 
-procedure DrawLine(bl: pBlock; num: Integer);
+procedure DrawLine(bl: pBlock; num: Integer; ownCanvas: TCanvas);
 begin
   case bl.Prev.Shape of
   stRectangle, stCircle, stTerminator:
@@ -531,14 +548,14 @@ begin
     case num of
     0:
     begin
-      bl.ownCanvas.moveto(bl.Prev.x+bl.Prev.w div 2,bl.Prev.y+bl.Prev.h);
-      bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.y);
+      ownCanvas.moveto(bl.Prev.x+bl.Prev.w div 2,bl.Prev.y+bl.Prev.h);
+      ownCanvas.lineto(bl.x+bl.w div 2,bl.y);
     end;
     1:
     begin
-      bl.ownCanvas.moveto(bl.Prev.x+bl.Prev.w,bl.Prev.y+bl.Prev.h div 2);
-      bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.Prev.y+bl.Prev.h div 2);
-      bl.ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
+      ownCanvas.moveto(bl.Prev.x+bl.Prev.w,bl.Prev.y+bl.Prev.h div 2);
+      ownCanvas.lineto(bl.x+bl.w div 2,bl.Prev.y+bl.Prev.h div 2);
+      ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
     end;
     end;
 
@@ -548,44 +565,67 @@ begin
     case num of
     0:
     begin
-      bl.ownCanvas.moveto(bl.Prev.x+bl.Prev.w div 2,bl.Prev.y+bl.Prev.h);
-      bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.y);
+      ownCanvas.moveto(bl.Prev.x+bl.Prev.w div 2,bl.Prev.y+bl.Prev.h);
+      ownCanvas.lineto(bl.x+bl.w div 2,bl.y);
     end;
     2:
     begin
-      bl.ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*3) div 4,bl.Prev.y+(bl.Prev.h) div 4);
-      bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.Prev.y-FormMain.FrameEditLines.UpDownVertical.Position div 2);
-      bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.Prev.y-FormMain.FrameEditLines.UpDownVertical.Position div 2);
-      bl.ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
+      ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*3) div 4,bl.Prev.y+(bl.Prev.h) div 4);
+      ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.Prev.y-FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.x+bl.w div 2,bl.Prev.y-FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
     end;
     1:
     begin
 
-      bl.ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*3) div 4,bl.Prev.y+(bl.Prev.h*3) div 4);
-      bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.Prev.y+bl.Prev.h + FormMain.FrameEditLines.UpDownVertical.Position div 2);
-      bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
-      bl.ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
-      bl.ownCanvas.lineto(bl.x+bl.w div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
-      bl.ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
+      ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*3) div 4,bl.Prev.y+(bl.Prev.h*3) div 4);
+      ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.Prev.y+bl.Prev.h + FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.x+bl.w div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
     end;
     end;
   end;
   stCycle:
   begin
+    case num of
+    0:
+    begin
+      ownCanvas.moveto(bl.Prev.x+bl.Prev.w div 2,bl.Prev.y+bl.Prev.h);
+      ownCanvas.lineto(bl.x+bl.w div 2,bl.y);
+    end;
+    2:
+    begin
+      ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*7) div 8,bl.Prev.y+(bl.Prev.h) div 4);
+      ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.Prev.y-FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.x+bl.w div 2,bl.Prev.y-FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
+    end;
+    1:
+    begin
 
+      ownCanvas.moveto(bl.Prev.x+(bl.Prev.w*7) div 8,bl.Prev.y+(bl.Prev.h*3) div 4);
+      ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.Prev.y+bl.Prev.h + FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.Prev.x+bl.Prev.w+FormMain.FrameEditLines.UpDownHorizontal.Position div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.x+bl.w div 2,bl.y - FormMain.FrameEditLines.UpDownVertical.Position div 2);
+      ownCanvas.lineto(bl.x+bl.w div 2, bl.y);
+    end;
+    end;
   end;
 
   end;
 end;
 
-procedure DrawTree(bl: pBlock; var maxx, maxy: Integer);
+procedure DrawTree(bl: pBlock; var maxx, maxy: Integer; ownCanvas: TCanvas);
 var
   temp: pBlock;
   num: Integer;
 begin
   if bl <> nil then
   begin
-    DrawBlock(bl);
+    DrawBlock(bl,ownCanvas);
     if bl.y+bl.h>maxy then
       maxy:=bl.y+bl.h;
     if bl.x+bl.w>maxx then
@@ -596,22 +636,22 @@ begin
       num:=0;
       while bl.Prev.Next[num]<>bl do
         inc(num);
-      DrawLine(bl, num);
+      DrawLine(bl, num, ownCanvas);
     end;
 
     temp := bl;
     for var i := 0 to High(temp.Next) do
     begin
       temp := bl.Next[i];
-      DrawTree(temp,maxx, maxy);
+      DrawTree(temp,maxx, maxy, ownCanvas);
     end;
   end;
 end;
 
-Procedure ShowHintBlock(num: Integer);
+Procedure ShowHintBlock(num: Integer; ownCanvas: TCanvas);
 
 begin
-  FormMain.PaintField.Canvas.Pen.Style:=HintBlockStyle;
+  ownCanvas.Pen.Style:=HintBlockStyle;
   case num of
   0:
   begin
@@ -633,13 +673,13 @@ begin
 
   end;
 
-  DrawBlock(HintBlock);
-  DrawLine(HintBlock,num);
+  DrawBlock(HintBlock, ownCanvas);
+  DrawLine(HintBlock,num,ownCanvas);
 
-  FormMain.PaintField.Canvas.Pen.Style:=psSolid;
+  ownCanvas.Pen.Style:=psSolid;
 end;
 
-procedure DrawAllBlocks();
+procedure DrawAllBlocks(ownCanvas: TCanvas);
 var
   temp: pAllBlocks;
   maxx, maxy: Integer;
@@ -650,7 +690,7 @@ begin
   while temp.Next <> Nil do
   begin
     temp := temp.Next;
-    DrawTree(temp.Block, maxx, maxy);
+    DrawTree(temp.Block, maxx, maxy, ownCanvas);
   end;
   if (CurBlock<>nil)then
   begin
@@ -660,30 +700,32 @@ begin
       maxx:=CurBlock.x+200;
 
     if Flag then
-      DrawTree(CurBlock, maxx, maxy);
+      DrawTree(CurBlock, maxx, maxy, ownCanvas);
   end;
 
-
-  FormMain.PaintField.width:=maxx+200;
-  FormMain.PaintField.height:=maxy+200;
+  if ownCanvas=FormMain.PaintField.Canvas then
+  begin
+    FormMain.PaintField.width:=maxx+200;
+    FormMain.PaintField.height:=maxy+200;
+  end;
 
   if CurHighLightedBlock<>nil then
   begin
-    HighLightBlock.ownCanvas.Pen.Width:=2;
+    ownCanvas.Pen.Width:=2;
     HighLightBlock.Shape:=CurHighLightedBlock.Shape;
     HighLightBlock.H := CurHighLightedBlock.H+1;
     HighLightBlock.W := CurHighLightedBlock.W+1;
     HighLightBlock.y := CurHighLightedBlock.y;
     HighLightBlock.x := CurHighLightedBlock.x;
 
-    HighlightBlock.OwnCanvas.Brush.Style:=bsClear;
-    DrawBlock(HighLightBlock);
-    HighlightBlock.OwnCanvas.Brush.Style:=bsSolid;
-    HighLightBlock.ownCanvas.Pen.Width:=1;
+    OwnCanvas.Brush.Style:=bsClear;
+    DrawBlock(HighLightBlock,ownCanvas);
+    OwnCanvas.Brush.Style:=bsSolid;
+    ownCanvas.Pen.Width:=1;
   end;
 
   if HintBlock.Prev<>nil then
-    ShowHintBlock(ConnectNum);
+    ShowHintBlock(ConnectNum,ownCanvas);
 end;
 
 
@@ -697,8 +739,8 @@ begin
   begin
     EditText.Show;
 
-    EditText.Left := CurHighLightedBlock.x;
-    EditText.Top := CurHighLightedBlock.y;
+    EditText.Left := CurHighLightedBlock.x - (Field.HorzScrollBar.Position);
+    EditText.Top := CurHighLightedBlock.y - (Field.VertScrollBar.Position);
     EditText.Height := CurHighLightedBlock.h;
     EditText.Width := CurHighLightedBlock.h;
 
@@ -716,7 +758,7 @@ end;
 
 procedure TFormMain.PaintFieldPaint(Sender: TObject);
 begin
-  DrawAllBlocks();
+  DrawAllBlocks(PaintField.Canvas);
 end;
 
 
@@ -1077,7 +1119,6 @@ begin
   begin
     W := FrameEditBlocks.UpDownWidth.Position;
     H := FrameEditBlocks.UpDownHeight.Position;
-    ownCanvas:= (Sender as TPaintBox).Canvas;
     FillColor:=clWhite;
     BorderColor:=clBlack;
   end;

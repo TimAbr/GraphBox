@@ -4,7 +4,8 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Buttons;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Buttons,
+  System.ImageList, Vcl.ImgList;
 
 type
   TFormStart = class(TForm)
@@ -21,8 +22,13 @@ type
     Button3: TButton;
     StaticText1: TStaticText;
     StaticText2: TStaticText;
+    ImageList1: TImageList;
+    StaticText3: TStaticText;
+    Label4: TLabel;
+    Image1: TImage;
     procedure Button1Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+
   private
     { Private declarations }
   public
@@ -47,5 +53,9 @@ procedure TFormStart.Button3Click(Sender: TObject);
 begin
   close;
 end;
+
+
+
+
 
 end.
