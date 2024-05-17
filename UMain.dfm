@@ -25,26 +25,38 @@ object FormMain: TFormMain
   OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
-  object Panel1: TPanel
+  object BottomPnl: TPanel
     Left = 0
-    Top = 491
+    Top = 497
     Width = 858
-    Height = 28
+    Height = 22
     Align = alBottom
     BevelOuter = bvNone
+    ParentBackground = False
     TabOrder = 0
     object FileName: TLabel
-      Left = 94
-      Top = 8
-      Width = 42
+      Left = 103
+      Top = 6
+      Width = 82
       Height = 13
       Caption = 'Filename'
     end
+    object FilesPB: TPaintBox
+      Left = 0
+      Top = 0
+      Width = 858
+      Height = 22
+      Align = alClient
+      OnMouseDown = FilesPBMouseDown
+      OnPaint = FilesPBPaint
+      ExplicitTop = 6
+      ExplicitHeight = 28
+    end
     object Button1: TButton
-      Left = 11
-      Top = 2
+      Left = 17
+      Top = 0
       Width = 65
-      Height = 24
+      Height = 22
       Cursor = crHandPoint
       Align = alCustom
       Caption = 'Back'
@@ -64,7 +76,6 @@ object FormMain: TFormMain
     ParentBiDiMode = False
     ParentBackground = False
     TabOrder = 1
-    ExplicitTop = 29
     object EditFontSize: TEdit
       Left = 4
       Top = 6
@@ -95,7 +106,7 @@ object FormMain: TFormMain
     Left = 97
     Top = 59
     Width = 639
-    Height = 432
+    Height = 438
     HorzScrollBar.Smooth = True
     HorzScrollBar.Tracking = True
     VertScrollBar.Smooth = True
@@ -111,11 +122,12 @@ object FormMain: TFormMain
     OnClick = FieldClick
     OnDragOver = StartBlockDragOver
     OnMouseWheel = FieldMouseWheel
+    ExplicitHeight = 432
     object PaintField: TPaintBox
       Left = 1
       Top = 1
       Width = 638
-      Height = 406
+      Height = 425
       OnDblClick = PaintFieldDblClick
       OnDragDrop = StartBlockDragDrop
       OnDragOver = StartBlockDragOver
@@ -129,13 +141,12 @@ object FormMain: TFormMain
     Left = 736
     Top = 59
     Width = 122
-    Height = 432
+    Height = 438
     Align = alRight
     BevelOuter = bvNone
     ParentBackground = False
     TabOrder = 3
-    ExplicitTop = 49
-    ExplicitHeight = 442
+    ExplicitHeight = 432
     object ButtonBlocks: TSpeedButton
       Left = 6
       Top = 1
@@ -187,13 +198,12 @@ object FormMain: TFormMain
     Left = 0
     Top = 59
     Width = 97
-    Height = 432
+    Height = 438
     Align = alLeft
     BevelOuter = bvNone
     ParentBackground = False
     TabOrder = 4
-    ExplicitTop = 49
-    ExplicitHeight = 442
+    ExplicitHeight = 432
     object Label2: TLabel
       Left = 0
       Top = 0
@@ -300,27 +310,34 @@ object FormMain: TFormMain
     object Save: TAction
       Caption = 'Save'
       ImageIndex = 0
+      ShortCut = 16467
+      OnExecute = SaveExecute
+      OnUpdate = SaveUpdate
     end
     object SaveAs: TAction
       Caption = 'Save as'
       ImageIndex = 1
+      ShortCut = 49235
       OnExecute = SaveAsExecute
       OnUpdate = SaveAsUpdate
     end
     object NewFile: TAction
       Caption = 'NewFile'
       ImageIndex = 2
+      ShortCut = 16462
       OnExecute = NewFileExecute
     end
     object Open: TAction
       Caption = 'Open'
       ImageIndex = 3
+      ShortCut = 16463
       OnExecute = OpenExecute
       OnUpdate = OpenUpdate
     end
     object ExportAsPng: TAction
       Caption = 'ExportAsPng'
       ImageIndex = 4
+      ShortCut = 49225
       OnExecute = ExportAsPngExecute
       OnUpdate = ExportAsPngUpdate
     end

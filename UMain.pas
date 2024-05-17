@@ -17,8 +17,7 @@ type
     Edit2: TMenuItem;
     Open1: TMenuItem;
     Save1: TMenuItem;
-
-    Panel1: TPanel;
+    BottomPnl: TPanel;
     Button1: TButton;
     MenuPanel: TPanel;
     EditFontSize: TEdit;
@@ -54,6 +53,7 @@ type
     ToolButton5: TToolButton;
     ToolButton6: TToolButton;
     SaveImageDialog: TSaveDialog;
+    FilesPB: TPaintBox;
 
     procedure Button1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -85,6 +85,11 @@ type
     procedure ExportAsPngUpdate(Sender: TObject);
     procedure NewFileExecute(Sender: TObject);
     procedure FieldClick(Sender: TObject);
+    procedure FilesPBPaint(Sender: TObject);
+    procedure FilesPBMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure SaveExecute(Sender: TObject);
+    procedure SaveUpdate(Sender: TObject);
 
   private
 
@@ -98,11 +103,13 @@ procedure FindMinDistInTree(bl: pBlock; X, Y: Integer; var Min: Real;
   var res: pBlock; main: pBlock);
 procedure StructuriseBlocks();
 procedure DrawAllBlocks(ownCanvas: TCanvas);
+Procedure CreateFileBlock(F: pFilesArr);
 
 
 var
   FormMain: TFormMain;
   Blocks: pAllBlocks;
+  Files: pFilesArr;
   EditText: TProEdit;
   CurHighLightedBlock, HighLightBlock, HintBlock: pBlock;
   x0, y0, ConnectNum: Integer;
@@ -111,6 +118,7 @@ var
   HighLightColor, DefaultColor, HintBlockColor:Integer;
   HintBlockStyle: TPenStyle;
   Compact:Boolean;
+  CurFile: pFilesArr;
 
 
 implementation
@@ -118,6 +126,23 @@ implementation
 {$R *.dfm}
 
 Uses UStart;
+
+Procedure CreateFileBlock(F: pFilesArr);
+begin
+  with F^ do
+  begin
+    New(Form);
+    Form.H:=FormMain.FilesPB.Height;
+    Form.W:=110;
+    Form.Shape:=stRectangle;
+    Form.TextVertAllign:=vCenter;
+    Form.TextHorAllign:=hLeft;
+    Form.Text:='New file';
+    Next:=nil;
+    Form.BorderColor:=clMedGray;
+    Form.FontSize:=8;
+  end;
+end;
 
 // initialisation of the form
 procedure TFormMain.FormCreate(Sender: TObject);
@@ -130,6 +155,16 @@ begin
   Blocks.Next := nil;
   Blocks.Block := Nil;
 
+  new(Files);
+  Files.Form:=nil;
+
+  New(Files.Next);
+  CreateFileBlock(Files.Next);
+  Files.Next.Diag:=Blocks;
+  Files.Next.FName:='New file';
+
+  CurFile:=Files.Next;
+
   CurBlock:=nil;
   Compact:=True;
 
@@ -137,8 +172,8 @@ begin
   EditText.Parent := Field;
   EditText.Hide;
 
-  FrameEditBlocks.UpDownHeight.Position := 75;
-  FrameEditBlocks.UpDownWidth.Position := 75;
+  FrameEditBlocks.UpDownHeight.Position := 60;
+  FrameEditBlocks.UpDownWidth.Position := 130;
   FrameEditLines.UpDownHorizontal.Position:=50;
   FrameEditLines.UpDownVertical.Position:=50;
 
@@ -193,6 +228,131 @@ begin
 
   end;
   FileName.Caption:='';
+  FilesPB.Invalidate;
+end;
+
+
+procedure TFormMain.FilesPBMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+  Start, temp: pFilesArr;
+  n: Integer;
+  IsCur: Boolean;
+begin
+  Start:=Files;
+  n:=0;
+  while Files.Next<>nil do
+  begin
+    inc(n);
+    with Files.Next^ do
+    begin
+      if (x>=Form.x) and (x<=Form.x+Form.w) and (y>=Form.y) and (y<=Form.y+Form.h) then
+      begin
+        if ((x>=Form.x+Form.w-Form.H+9) and (x<=Form.x+Form.w-9) and (y>=Form.y+9) and (y<=Form.y+Form.h-9))
+            and (not (n=1) or (Next<>nil)) then
+        begin
+          temp:=Next;
+
+          isCur:= Files.Next = CurFile;
+
+          DestroyAll(Diag);
+          Dispose(Form);
+          Dispose(Files.Next);
+          Files.Next:=temp;
+          if IsCur then
+          begin
+            Files:=Start;
+
+            while Files.Next<>temp do
+              Files:=Files.Next;
+
+            if Files.Form<>nil then
+              CurFile:=Files
+            else
+              CurFile:=temp;
+          end;
+          Blocks:=CurFile.Diag;
+
+        end
+        else
+        begin
+          Blocks:=Diag;
+          CurFile:=Files.Next;
+        end;
+        break;
+      end;
+      Files:=Files.Next;
+    end;
+
+  end;
+  CurHighLightedBlock:=nil;
+  FilesPB.Invalidate();
+  PaintField.Invalidate();
+  Files:=Start;
+end;
+
+procedure TFormMain.FilesPBPaint(Sender: TObject);
+var
+  Start: pFilesArr;
+begin
+  Start:=Files;
+
+  Files:=Files.Next;
+
+  Files.Form.x:=ShapePanel.Width;
+  Files.Form.y:=0;
+  if Files = curFile then
+    Files.Form.FillColor:=clBtnHighLight
+  else
+    Files.Form.FillColor:=clBtnFace;
+
+  DrawBlock(Files.Form, FilesPB.Canvas);
+
+  if Files.Next<>nil then
+  begin
+
+    with FilesPB.Canvas do
+    begin
+      Pen.Color:=clMedGray;
+      with Files.Form^ do
+      begin
+        moveto(x+w-h+10,y+10);
+        lineto(x+w-9,y+h-9);
+        moveto(x+w-10,y+10);
+        lineto(x+w-h+9,y+h-9);
+      end;
+    end;
+
+    while Files.Next<>nil do
+    begin
+      Files.Next.Form.x:=Files.Form.x+ Files.Form.w;
+      Files.Next.Form.y:=0;
+
+      Files:=Files.Next;
+
+      if Files = curFile then
+        Files.Form.FillColor:=clBtnHighLight
+      else
+        Files.Form.FillColor:=clBtnFace;
+
+      DrawBlock(Files.Form, FilesPB.Canvas);
+
+      with FilesPB.Canvas do
+      begin
+        Pen.Color:=clMedGray;
+        with Files.Form^ do
+        begin
+          moveto(x+w-h+10,y+10);
+          lineto(x+w-9,y+h-9);
+          moveto(x+w-10,y+10);
+          lineto(x+w-h+9,y+h-9);
+        end;
+      end;
+
+    end
+  end;
+
+  Files:=Start;
 end;
 
 
@@ -258,13 +418,30 @@ end;
 
 
 procedure TFormMain.NewFileExecute(Sender: TObject);
+var
+  Start: pFilesArr;
 begin
-  DestroyAll(Blocks);
+
   Blocks:=nil;
   New(Blocks);
   Blocks.Next:=nil;
   Blocks.Block:=nil;
+
+  Start:=Files;
+
+  while files.Next<>nil do
+    Files:=Files.Next;
+
+  New(Files.Next);
+  CreateFileBlock(Files.Next);
+  Files.Next.Diag:=Blocks;
+  CurFile:=Files.Next;
+  CurFile.FName:='New file';
+
   PaintField.Invalidate;
+  FilesPB.Invalidate;
+
+  Files:=Start;
 end;
 
 procedure TFormMain.OpenExecute(Sender: TObject);
@@ -276,10 +453,46 @@ var
   temp: String[255];
   f:File;
   Start:pAllBlocks;
+  StartFiles: pFilesArr;
 begin
   if (OpenDialog.Execute) then
   begin
     FName := OpenDialog.FileName;
+
+    StartFiles:=Files;
+
+    while (Files.Next<>nil) and ((Files.Next.Form.text <> 'New file') or (Files.Next.Diag.Next <> nil)) do
+      Files:=Files.Next;
+
+    if Files.Next = nil then
+    begin
+      New(Files.Next);
+      Files:=Files.Next;
+      CreateFileBlock(Files);
+      New(Files.Diag);
+      Files.Diag.Next:=nil;
+    end
+    else
+    begin
+      Files:=Files.Next;
+
+    end;
+
+    Blocks:=Files.Diag;
+    Files.FName:=FName;
+    i:=length(FName);
+    Files.Form.text:='';
+    while (i>=1) and (FName[i]<>'\') do
+    begin
+      Files.Form.text:=FName[i]+Files.Form.text;
+      dec(i);
+    end;
+    CurFile:=Files;
+
+    Files:=StartFiles;
+
+    CurHighLightedBlock:=nil;
+    FilesPB.Invalidate();
 
     AssignFile(f,FName);
     Reset(f,1);
@@ -331,6 +544,8 @@ begin
     Blocks:=Start;
     StructuriseBlocks();
     PaintField.Invalidate();
+
+
   end;
 end;
 
@@ -356,15 +571,22 @@ begin
     FName := SaveDialog.FileName;
 
     if LowerCase(Copy(FName,length(FName)-2))<>'.gb' then
+      FName:=FName+'.gb';
+
+    CurFile.FName:=FName;
+
+    CurFile.Form.text:='';
+
+    i:=length(FName);
+    while (i>=1) and (FName[i]<>'\') do
     begin
-      AssignFile(f,FName+'.gb');
-      FileName.Caption:=FName;
-    end
-    else
-    begin
-      AssignFile(f,FName);
-      FileName.Caption:=Copy(FName,1,length(FName)-3);
+      CurFile.Form.text:=FName[i]+CurFile.Form.text;
+      dec(i);
     end;
+
+    AssignFile(f,FName);
+    FileName.Caption:=FName;
+
     Rewrite(f,1);
 
     tempBlock:=Blocks;
@@ -421,12 +643,93 @@ begin
 
     end;
     closefile(f);
+    FilesPB.Invalidate();
   end;
 end;
 
 procedure TFormMain.SaveAsUpdate(Sender: TObject);
 begin
   SaveAs.Enabled:=Blocks.Next<>nil;
+end;
+
+procedure TFormMain.SaveExecute(Sender: TObject);
+var
+  Arr: TArrBlocks;
+  ArrPrev, ArrPos: TArrInt;
+  len, n, ls, i:Integer;
+  FName: String;
+  f:File;
+  tempBlock:pAllBlocks;
+  temp:String[255];
+  tempArr: TNextArr;
+
+begin
+  FName:=CurFile.FName;
+  AssignFile(f,FName);
+  FileName.Caption:=FName;
+
+  Rewrite(f,1);
+
+  tempBlock:=Blocks;
+  n:=0;
+
+  while tempBlock.Next<>nil do
+  begin
+    tempBlock:=tempBlock.Next;
+    inc(n);
+  end;
+
+  BlockWrite(f, n, 4);
+  tempBlock:=Blocks;
+
+  for var k := 1 to n do
+  begin
+    tempBlock:=tempBlock.Next;
+
+    len:=0;
+    ConverteToMas(tempBlock.Block, Arr, ArrPrev,ArrPos,len);
+    inc(len);
+
+    BlockWrite(f, len, 4);
+
+    for i := 0 to len-1 do
+    begin
+      temp:=Arr[i].Text;
+      ls:=length(Arr[i].Text);
+
+      Arr[i].Text:='';
+
+      tempArr:=Arr[i].Next;
+      Arr[i].Next:=nil;
+
+      BlockWrite(f, Arr[i]^, sizeOf(TBlock));
+
+      Arr[i].Next:=tempArr;
+      Arr[i].text:=temp;
+    end;
+
+    for i := 0 to len-1 do
+      BlockWrite(f, ArrPrev[i], 4);
+
+    for i := 0 to len-1 do
+      BlockWrite(f, ArrPos[i], 4);
+
+    for i := 0 to len-1 do
+    begin
+      ls:=length(Arr[i].Text);
+      BlockWrite(f, ls, 4);
+      temp:=Arr[i].Text;
+      BlockWrite(f, temp, ls*2);
+    end;
+
+  end;
+  closefile(f);
+end;
+
+
+procedure TFormMain.SaveUpdate(Sender: TObject);
+begin
+  Save.Enabled:=(Blocks.Next<>nil) and (CurFile.FName<> 'New file');
 end;
 
 procedure TFormMain.ExportAsPngExecute(Sender: TObject);
@@ -442,9 +745,9 @@ begin
     BitMap.Height:=PaintField.Height;
     BitMap.width:=PaintField.width;
 
+
     DrawAllBlocks(BitMap.Canvas);
 
-    //BitMap.Canvas.CopyRect(Rect(0,0,BitMap.Height,BitMap.width),PaintField.Canvas,Rect(0,0,PaintField.Height,PaintField.width));
     PNG.Assign(BitMap);
 
     FName := SaveImageDialog.FileName;
@@ -727,10 +1030,6 @@ begin
   if HintBlock.Prev<>nil then
     ShowHintBlock(ConnectNum,ownCanvas);
 end;
-
-
-
-
 
 
 procedure TFormMain.PaintFieldDblClick(Sender: TObject);
@@ -1042,6 +1341,7 @@ Var
   num: Integer;
 
 begin
+
   Dispose(CurBlock);
   CurBlock:=nil;
   HintBlock.Prev:=nil;
@@ -1189,6 +1489,8 @@ begin
         HighLightBlock.x := CurHighLightedBlock.x-1;
         HintBlock.Prev:=CurHighLightedBlock;
         HintBlock.Shape:=CurBlock.Shape;
+        HintBlock.w:=CurBlock.w;
+        HintBlock.h:=CurBlock.H;
         ConnectNum:=num;
       end
       else
@@ -1292,6 +1594,8 @@ begin
         HighLightBlock.x := CurHighLightedBlock.x-1;
         HintBlock.Prev := CurHighLightedBlock;
         HintBlock.Shape:=CurBlock.Shape;
+        HintBlock.w:=CurBlock.w;
+        HintBlock.h:=CurBlock.H;
         ConnectNum:=num;
       end
       else

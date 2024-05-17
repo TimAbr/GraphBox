@@ -7,7 +7,9 @@ uses
   HelpTypes in 'HelpTypes.pas',
   UEditBlocks in 'UEditBlocks.pas' {FrameEditBlocks: TFrame},
   UEditLines in 'UEditLines.pas' {FrameEditLines: TFrame},
-  UFiles in 'UFiles.pas';
+  UFiles in 'UFiles.pas',
+  UWelcome in 'UWelcome.pas' {FrameWelcome: TFrame},
+  UCustiomize in 'UCustiomize.pas' {FrameCust: TFrame};
 
 {$R *.res}
 

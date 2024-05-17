@@ -53,6 +53,15 @@ interface
       prev: pBlock;
     end;
 
+    pFilesArr = ^TFilesArr;
+
+    TFilesArr = record
+      Form: pBlock;
+      Next: pFilesArr;
+      FName: String;
+      Diag: pAllBlocks;
+    end;
+
     procedure DrawBlock(bl: pBlock; ownCanvas: TCanvas);
     procedure WriteText(bl: pBlock; ownCanvas: TCanvas);
 
