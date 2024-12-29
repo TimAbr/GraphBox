@@ -22,6 +22,6 @@ The project was inspired by programs such as Visio and Draw.io . However, it is 
 - Ctrl-C to copy an image as a PNG image
 - Saving a flowchart to a custom file format
 
-##Installation
+## Installation
 
 For a convenient installation, an installer with the ability to select various parameters was made.
