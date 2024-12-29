@@ -1,8 +1,3 @@
-<style>
-   .fig {
-    text-align: center; /* Выравнивание по центру */ 
-   }
-</style>
 #GraphBox
 
 This is my first course project, so please don't judge me too harshly. Although the grouping of files leaves much to be desired, however, you may like the functionality of the program.
@@ -11,7 +6,7 @@ The program was made using Delphi.
 ##Main idea
 
 <p> This program allows you to build flowcharts according to the Damke principle. This is a special type of schema that can be used to build only program schemas that correspond to the concept of structured programming. The principle is that the blocks on the right reveal the content of the blocks on the left.</p>
-<p class="fig"><img width="40%" src="https://github.com/user-attachments/assets/c9fcd6a6-006e-4313-a655-9d212f013727"></p>
+<p text-align: center><img width="40%" src="https://github.com/user-attachments/assets/c9fcd6a6-006e-4313-a655-9d212f013727"></p>
 
 ##Features
 
