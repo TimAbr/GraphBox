@@ -6,7 +6,7 @@ The program was made using Delphi.
 ##Main idea
 
 This program allows you to build flowcharts according to the Damke principle. This is a special type of schema that can be used to build only program schemas that correspond to the concept of structured programming. The principle is that the blocks on the right reveal the content of the blocks on the left.
-![image](https://github.com/user-attachments/assets/c9fcd6a6-006e-4313-a655-9d212f013727)
+<img width="40%" src="https://github.com/user-attachments/assets/c9fcd6a6-006e-4313-a655-9d212f013727">
 
 ##Features
 
