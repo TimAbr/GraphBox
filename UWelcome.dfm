@@ -60,9 +60,9 @@ object FrameWelcome: TFrameWelcome
     ExplicitWidth = 539
   end
   object BtnNew: TButton
-    Left = 196
-    Top = 241
-    Width = 61
+    Left = 190
+    Top = 237
+    Width = 71
     Height = 63
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -78,9 +78,9 @@ object FrameWelcome: TFrameWelcome
     OnClick = BtnNewClick
   end
   object BtnOpen: TButton
-    Left = 296
-    Top = 241
-    Width = 57
+    Left = 288
+    Top = 235
+    Width = 68
     Height = 63
     Action = FormMain.Open
     Font.Charset = DEFAULT_CHARSET

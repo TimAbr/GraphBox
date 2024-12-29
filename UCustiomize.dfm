@@ -1126,7 +1126,7 @@ object FrameCust: TFrameCust
     EditLabel.Height = 13
     EditLabel.Caption = 'Block width'
     TabOrder = 1
-    Text = '0'
+    Text = '10'
   end
   object EditHeight: TLabeledEdit
     Left = 207
@@ -1137,7 +1137,7 @@ object FrameCust: TFrameCust
     EditLabel.Height = 13
     EditLabel.Caption = 'Block height'
     TabOrder = 2
-    Text = '0'
+    Text = '10'
   end
   object StaticText2: TStaticText
     Left = 47
@@ -1162,7 +1162,7 @@ object FrameCust: TFrameCust
     EditLabel.Height = 13
     EditLabel.Caption = 'Horizontal'
     TabOrder = 4
-    Text = '0'
+    Text = '10'
   end
   object EditVert: TLabeledEdit
     Left = 207
@@ -1173,7 +1173,7 @@ object FrameCust: TFrameCust
     EditLabel.Height = 13
     EditLabel.Caption = 'Vertical'
     TabOrder = 5
-    Text = '0'
+    Text = '10'
   end
   object UpDownWidth: TUpDown
     Left = 168
@@ -1270,6 +1270,7 @@ object FrameCust: TFrameCust
     Height = 33
     Caption = 'Save'
     TabOrder = 14
+    OnClick = Button1Click
   end
   object ColorDialog1: TColorDialog
     Left = 223

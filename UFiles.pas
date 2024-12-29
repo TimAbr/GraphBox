@@ -94,21 +94,11 @@ begin
     if bl.Next[i]<>nil then
       DestroyDiag(bl.Next[i]);
 
-  if bl.Prev<>nil then
-  begin
-    n:=High(bl.Prev.Next);
-    while bl.Prev.Next[n]<>bl do
-      dec(n);
-    bl.Prev.Next[n]:=nil;
-    bl.Prev:=nil;
-  end;
-
   Dispose(bl);
 end;
 
 Procedure DestroyAll(el:pAllBlocks);
 var
-  n:Integer;
   temp: pAllBlocks;
 begin
   while el.Next<>nil do

@@ -2,7 +2,7 @@ unit HelpTypes;
 
 interface
   Uses
-    Vcl.ExtCtrls, Vcl.Graphics, System.Classes, Vcl.Controls, Vcl.StdCtrls, Vcl.ComCtrls;
+    Vcl.ExtCtrls, Vcl.Graphics, System.Classes, Vcl.Controls, Vcl.StdCtrls, Vcl.ComCtrls, SysUtils;
   Type
 
     pAllBlocks = ^AllBlocks;
@@ -30,7 +30,7 @@ interface
       Next: pAllBlocks;
     end;
 
-    THorAllign = (hLeft, hRight, hCenter);
+    THorAllign = (hLeft, hCenter, hRight);
     TVertAllign = (vUp, vCenter, vDown);
     TNextArr = Array of pBlock;
 
@@ -39,18 +39,27 @@ interface
       FillColor:Integer;
       Text:String;
       Shape:TShapeType;
-      x,y,w,h, FontSize:Integer;
+      x,y,w,h:Integer;
       Next: TNextArr;
       Prev: pBlock;
       TextHorAllign:THorAllign;
       TextVertAllign:TVertAllign;
       TextInterval:Integer;
+      FontStyle: Integer;
+      FontSize: Integer;
 
     end;
 
     TProEdit = class(TRichEdit)
     public
       prev: pBlock;
+    end;
+
+    pUndoList = ^TUndoList;
+
+    TUndoList = record
+      Cur: pAllBlocks;
+      Next: pUndoList;
     end;
 
     pFilesArr = ^TFilesArr;
@@ -60,13 +69,109 @@ interface
       Next: pFilesArr;
       FName: String;
       Diag: pAllBlocks;
+      UndoList: pUndoList;
     end;
+
+
 
     procedure DrawBlock(bl: pBlock; ownCanvas: TCanvas);
     procedure WriteText(bl: pBlock; ownCanvas: TCanvas);
+    function CopyDiag(diag: pAllBlocks): pAllBlocks;
+    procedure AddUndo(f: pFilesArr);
+    procedure getUndo(f: pFilesArr);
 
 
 implementation
+
+Uses uFiles, UMain;
+
+procedure CopyTree(src, dest: pBlock);
+begin
+  if src.Prev = nil then
+    dest^:=src^;
+
+  dest.Next:=nil;
+  setlength(dest.Next,length(src.Next));
+  for var i := Low(src.Next) to High(src.Next) do
+  begin
+    dest.Next[i]:=nil;
+    if src.Next[i]<>nil then
+    begin
+      New(dest.Next[i]);
+      dest.Next[i]^:=src.Next[i]^;
+      dest.Next[i].Prev:=dest;
+      CopyTree(src.Next[i],dest.Next[i]);
+    end;
+  end;
+end;
+
+function CopyDiag(diag: pAllBlocks): pAllBlocks;
+var
+  start:pAllBlocks;
+begin
+  New(Result);
+  Result.Block:=nil;
+  start:=Result;
+  while diag.Next<>nil do
+  begin
+    diag:=diag.Next;
+    New(Result.Next);
+    Result:=Result.Next;
+    result.Block:=nil;
+    if diag.Block<>nil then
+    begin
+      New(result.Block);
+      CopyTree(diag.Block, result.Block);
+    end;
+  end;
+  Result.Next:=nil;
+  Result:=Start;
+end;
+
+procedure AddUndo(f: pFilesArr);
+var
+  temp: pUndoList;
+  dg: pAllBlocks;
+  count: Integer;
+begin
+  dg:=CopyDiag(f.Diag);
+
+  temp:=f.UndoList.Next;
+  f.UndoList.Next:=nil;
+  New(f.UndoList.Next);
+  f.UndoList.Next.Next:=temp;
+  f.UndoList.Next.Cur:=dg;
+
+  temp:=f.UndoList;
+  count:=0;
+
+  while (temp.Next<>nil) and (count<20) do
+  begin
+    inc(count);
+    temp:=temp.Next;
+  end;
+
+  if temp.Next<>nil then
+  begin
+    DestroyAll(temp.Next.Cur);
+    Dispose(temp.Next);
+    temp.Next:=nil;
+  end;
+end;
+
+procedure getUndo(f: pFilesArr);
+var
+  temp: pUndoList;
+begin
+  DestroyAll(f.Diag);
+  if f.diag<>f.UndoList.Next.Cur then
+    DestroyAll(f.UndoList.Next.Cur);
+
+  f.Diag:=CopyDiag(f.UndoList.Next.Next.Cur);
+  temp:=f.UndoList.Next.Next;
+  Dispose(f.UndoList.Next);
+  f.UndoList.Next:=temp;
+end;
 
 constructor TStartBlock.Create(AOwner: TComponent);
 begin
@@ -121,7 +226,7 @@ begin
       stRectangle:
         Rectangle(X+1, Y+1, X + W-1, Y + H-1);
       stCircle:
-        Ellipse(X+1, Y+1, X + W-1, Y + H-1);
+        Ellipse(X+(w-h) div 2, Y, X + (w+h) div 2, Y + H);
       stDecision:
       begin
 
@@ -249,8 +354,8 @@ begin
 
   if length(bl.text)<>0 then
   begin
-    OwnCanvas.Font.Size:=bl.FontSize;
-    OwnCanvas.Font.Name:='Tahoma';
+    ownCanvas.font.size:=StrToInt(FormMain.EditFontSize.Items[bl.FontSize]);
+    ownCanvas.font.Name:=FormMain.ChangeFontStyle.Items[bl.FontStyle];
     th:=0;
     for var n := 1 to length(bl.text) do
       if (bl.text[n]=#13) then
@@ -259,7 +364,6 @@ begin
         text:='';
       end
       else
-      if bl.text[n]<>#10 then
         text:=text+bl.text[n];
 
     th:=th+ownCanvas.textHeight(text);
@@ -312,8 +416,6 @@ begin
 
     ownCanvas.Brush.Style:=bsSolid;
   end;
-
-
 
 end;
 end.

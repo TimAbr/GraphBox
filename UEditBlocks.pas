@@ -14,10 +14,9 @@ type
     LabelWidth: TLabel;
     EditWidth: TEdit;
     UpDownWidth: TUpDown;
-    LabelScale: TLabel;
-    EditScale: TEdit;
-    TrackBarScale: TTrackBar;
     procedure UpDownChanging(Sender: TObject; var AllowChange: Boolean);
+    procedure EditHeightKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
 
 
   private
@@ -34,13 +33,44 @@ Uses UMain;
 
 {$R *.dfm}
 
+procedure TFrameEditBlocks.EditHeightKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  inputData: String;
+  ErrorCode, res: Integer;
+  CurUd: TUpDown;
+begin
+  if (Key = 13) then
+  begin
+    if (Sender as TEdit) = EditHeight then
+      CurUD:=UpDownHeight
+    else
+      CurUD:=UpDownWidth;
+
+    inputData:=(Sender as TEdit).text;
+    val(InputData, res, ErrorCode);
+    if (ErrorCode = 0) and (Res in [CurUD.Min..CurUD.Max]) then
+    begin
+      CurUD.Position:=res;
+      (Sender as TEdit).Text:=IntToStr(res);
+      ReSizeAll(UpDownWidth.Position, UpDownHeight.Position);
+      StructuriseBlocks(Blocks);
+      FormMain.PaintField.Invalidate();
+    end
+    else
+    begin
+      (Sender as TEdit).text:=IntToStr(CurUD.Position);
+    end;
+  end;
+end;
+
 procedure TFrameEditBlocks.UpDownChanging(Sender: TObject; var AllowChange: Boolean);
 var
   temp: pAllBlocks;
 begin
   temp := Blocks;
   ReSizeAll(UpDownWidth.Position, UpDownHeight.Position);
-  StructuriseBlocks();
+  StructuriseBlocks(Blocks);
   FormMain.PaintField.Invalidate();
 end;
 

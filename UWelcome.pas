@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
-  System.ImageList, Vcl.ImgList;
+  System.ImageList, Vcl.ImgList, Vcl.ExtCtrls;
 
 type
   TFrameWelcome = class(TFrame)
@@ -34,16 +34,14 @@ Uses UMain, UStart;
 
 procedure TFrameWelcome.BtnNewClick(Sender: TObject);
 begin
-  FormMain.Show();
-  FormStart.Hide();
+  FormMain.ShowModal();
 end;
 
 
 procedure TFrameWelcome.BtnOpenMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  FormMain.Show();
-  FormStart.Hide();
+  FormMain.ShowModal();
 end;
 
 end.

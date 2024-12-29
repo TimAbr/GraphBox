@@ -3705,27 +3705,22 @@ object FormStart: TFormStart
     ParentColor = False
     TabOrder = 2
     Visible = False
-    ExplicitLeft = 74
-    ExplicitTop = 89
+    ExplicitLeft = 193
     inherited EditWidth: TLabeledEdit
       EditLabel.Width = 58
       EditLabel.ExplicitWidth = 58
-      Text = '10'
     end
     inherited EditHeight: TLabeledEdit
       EditLabel.Width = 62
       EditLabel.ExplicitWidth = 62
-      Text = '10'
     end
     inherited EditHor: TLabeledEdit
       EditLabel.Width = 52
       EditLabel.ExplicitWidth = 52
-      Text = '10'
     end
     inherited EditVert: TLabeledEdit
       EditLabel.Width = 39
       EditLabel.ExplicitWidth = 39
-      Text = '10'
     end
   end
 end
